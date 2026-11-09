@@ -8,15 +8,82 @@
   var top = document.getElementById('top');
   if (top) { var onS = function () { top.classList.toggle('scrolled', window.scrollY > 8); }; window.addEventListener('scroll', onS, { passive: true }); onS(); }
 
+  // menu en movil
+  var mb = document.querySelector('.menuBtn');
+  if (mb && top) {
+    var setMenu = function (open) { top.classList.toggle('open', open); mb.setAttribute('aria-expanded', open ? 'true' : 'false'); };
+    mb.addEventListener('click', function () { setMenu(!top.classList.contains('open')); });
+    top.querySelectorAll('nav a').forEach(function (a) { a.addEventListener('click', function () { setMenu(false); }); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setMenu(false); } });
+  }
+
   // ---------- titulo: entra palabra por palabra, como un subtitulo, y la caja pasa a "reels." ----------
-  var ttl = document.querySelector('.ttl');
-  if (ttl) {
-    if (reduce) { ttl.classList.add('done'); }
-    else {
-      var tws = ttl.querySelectorAll('.tw');
-      [].forEach.call(tws, function (w, k) { w.style.animationDelay = (120 + k * 140) + 'ms'; });
-      ttl.classList.add('play');
-      setTimeout(function () { ttl.classList.add('done'); }, 120 + tws.length * 140 + 380);
+  // Si la pagina se esta armando (assets/build.js), el titulo arranca cuando le toca.
+  var ttl = document.querySelector('.ttl'), ttlDone = false;
+  window.ladderTitle = function () {
+    if (!ttl || ttlDone) { return; } ttlDone = true;
+    if (reduce) { ttl.classList.add('done'); return; }
+    var tws = ttl.querySelectorAll('.tw');
+    [].forEach.call(tws, function (w, k) { w.style.animationDelay = (60 + k * 140) + 'ms'; });
+    ttl.classList.add('play');
+    setTimeout(function () { ttl.classList.add('done'); }, 60 + tws.length * 140 + 380);
+  };
+  window.ladderTitleReset = function () { if (ttl) { ttlDone = false; ttl.classList.remove('play', 'done'); } };
+  if (ttl) { ttl.classList.add('wait'); setTimeout(function () { if (!document.documentElement.classList.contains('bld')) { window.ladderTitle(); } }, 0); }
+
+  // ---------- el panel por dentro: capturas reales con puntos que explican cada parte ----------
+  var TOUR = {
+    editor: { alt: 'Editor: vista previa arriba y las frases del SRT debajo', pins: [[5, 38, 'Vista previa en vivo'], [5, 66, 'Tus frases'], [5, 90, 'Generar en After Effects']] },
+    menu: { alt: 'Menú de clic derecho con el submenú de animaciones abierto', pins: [[5, 39, 'Botones rápidos'], [5, 52, 'Submenús al lado']] },
+    ajustes: { alt: 'Ajustes: estilo de la edición y tamaños', pins: [[5, 21, 'Estilo de toda la edición'], [5, 66, 'Tamaños S, M y L']] },
+    biblioteca: { alt: 'Biblioteca de composiciones ordenada en grupos', pins: [[5, 27, 'Grupos'], [5, 64, 'Insertar con un clic']] },
+    sonidos: { alt: 'Biblioteca de sonidos por categoría', pins: [[5, 17, 'Categorías'], [5, 29, 'Escucha y usa']] }
+  };
+  var tabs = [].slice.call(document.querySelectorAll('.tourList [data-shot]'));
+  var timg = document.getElementById('tourImg'), tpins = document.getElementById('tourPins'), tcap = document.getElementById('tourCap');
+  if (tabs.length && timg) {
+    var ti = 0, t0 = performance.now(), paused = false, DUR = 6500;
+    // precarga
+    tabs.forEach(function (b) { var im = new Image(); im.src = '/assets/ui/' + b.getAttribute('data-shot') + '.webp?v=3'; });
+    var pick = function (i, user) {
+      ti = (i + tabs.length) % tabs.length; t0 = performance.now();
+      var b = tabs[ti], k = b.getAttribute('data-shot'), d = TOUR[k];
+      tabs.forEach(function (x, j) { x.setAttribute('aria-selected', j === ti ? 'true' : 'false'); x.style.setProperty('--p', 0); });
+      timg.classList.add('swap');
+      setTimeout(function () {
+        timg.src = '/assets/ui/' + k + '.webp?v=3'; timg.alt = d.alt;
+        timg.classList.remove('swap');
+        tpins.innerHTML = '';
+        d.pins.forEach(function (p, n) {
+          var e = document.createElement('div'); e.className = 'pin' + (p[0] > 50 ? ' r' : '');
+          e.style.top = p[1] + '%'; if (p[0] > 50) { e.style.right = (100 - p[0] - 4) + '%'; } else { e.style.left = p[0] + '%'; }
+          e.style.animationDelay = (150 + n * 160) + 'ms';
+          e.innerHTML = '<i>' + (n + 1) + '</i><span></span>'; e.querySelector('span').textContent = p[2];
+          tpins.appendChild(e);
+        });
+      }, user ? 120 : 200);
+      if (tcap) { tcap.textContent = b.querySelector('span').textContent; }
+      if (user && window.matchMedia('(max-width: 900px)').matches) { b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); }
+    };
+    tabs.forEach(function (b, i) {
+      b.addEventListener('click', function () { pick(i, true); paused = true; });
+      b.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); pick(ti + 1, true); tabs[ti].focus(); paused = true; }
+        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); pick(ti - 1, true); tabs[ti].focus(); paused = true; }
+      });
+    });
+    var win = document.querySelector('.win');
+    if (win) { win.addEventListener('mouseenter', function () { paused = true; }); }
+    pick(0, false);
+    if (!reduce) {
+      var tick = function (now) {
+        if (!paused) {
+          var p = Math.min(1, (now - t0) / DUR); tabs[ti].style.setProperty('--p', p.toFixed(3));
+          if (p >= 1) { pick(ti + 1, false); }
+        } else { t0 = now - (parseFloat(tabs[ti].style.getPropertyValue('--p')) || 0) * DUR; }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
     }
   }
 

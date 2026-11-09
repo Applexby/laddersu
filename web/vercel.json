@@ -2,9 +2,39 @@
   "cleanUrls": true,
   "trailingSlash": true,
   "headers": [
-    { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }] }
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)\\.(css|js)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/assets/ui/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    }
   ],
   "redirects": [
-    { "source": "/descargar", "destination": "https://github.com/Applexby/laddersu/releases/latest/download/Laddersu-Setup.exe", "permanent": false }
+    {
+      "source": "/descargar",
+      "destination": "https://github.com/Applexby/laddersu/releases/latest/download/Laddersu-Setup.exe",
+      "permanent": false
+    }
   ]
 }

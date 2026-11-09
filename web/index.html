@@ -14,22 +14,31 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/site.css?v=3">
+<script>
+/* la pagina se arma sola al entrar (assets/build.js). Si algo falla, a los 9 s se muestra todo igual. */
+(function () { try {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+  var d = document.documentElement; d.classList.add('bld');
+  setTimeout(function () { if (!window.__bldOK) { d.classList.remove('bld'); } }, 9000);
+} catch (e) {} })();
+</script>
 </head>
 <body>
 
 <header class="top" id="top">
   <div class="wrap">
     <a class="logo" href="/"><span class="mark" aria-hidden="true"></span>Laddersu</a>
-    <nav aria-label="Secciones">
+    <nav aria-label="Secciones" id="mainNav">
+      <a href="/#panel">El panel</a>
       <a href="/#estilos">Estilos</a>
-      <a href="/#funciones">Funciones</a>
       <a href="/#instalar">Instalar</a>
       <a href="/guia/">Guía</a>
       <a href="/novedades/">Novedades</a>
       <a href="/consultas/">Consultas</a>
     </nav>
     <a class="pill" href="https://github.com/Applexby/laddersu/releases/latest/download/Laddersu-Setup.exe" data-dl>Descargar</a>
+    <button class="menuBtn" type="button" aria-label="Menú" aria-expanded="false" aria-controls="mainNav"><i></i><i></i></button>
   </div>
 </header>
 
@@ -65,6 +74,68 @@
       </div>
     </div>
   </div>
+
+  <section class="block tour" id="panel">
+    <div class="wrap">
+      <div class="head">
+        <h2>Así se ve el panel.</h2>
+        <p>Todo pasa dentro de After Effects, en una sola ventana. Elige una parte para verla.</p>
+      </div>
+      <div class="tourGrid">
+        <div class="tourList" role="tablist" aria-label="Partes del panel">
+          <button type="button" role="tab" data-shot="editor" aria-selected="true"><b>Editor</b><span>Tu SRT agrupado en frases, con la vista previa arriba. Un clic elige una palabra; ★ marca la palabra clave.</span><i class="bar"></i></button>
+          <button type="button" role="tab" data-shot="menu" aria-selected="false"><b>Clic derecho</b><span>Animación, estilo, color, fuente, sonido y plantillas, en submenús que se abren al lado.</span><i class="bar"></i></button>
+          <button type="button" role="tab" data-shot="ajustes" aria-selected="false"><b>Estilos y ajustes</b><span>Escalera, caja que recorre o una línea, con tamaños, márgenes y animación por defecto.</span><i class="bar"></i></button>
+          <button type="button" role="tab" data-shot="biblioteca" aria-selected="false"><b>Biblioteca</b><span>Tus composiciones guardadas, ordenadas en grupos, listas para insertar en cualquier proyecto.</span><i class="bar"></i></button>
+          <button type="button" role="tab" data-shot="sonidos" aria-selected="false"><b>Sonidos</b><span>Clics, pops y golpes en el tiempo exacto de cada palabra, y tus propios .wav o .mp3.</span><i class="bar"></i></button>
+        </div>
+        <figure class="win" aria-live="polite">
+          <div class="winBar" aria-hidden="true"><i></i><i></i><i></i><span>Ventana › Extensiones › Laddersu</span></div>
+          <div class="winBody">
+            <img id="tourImg" src="/assets/ui/editor.webp?v=3" alt="Panel de Laddersu: editor con la vista previa y las frases del SRT" width="440" height="760">
+            <div class="pins" id="tourPins" aria-hidden="true"></div>
+          </div>
+        </figure>
+        <p class="tourCap" id="tourCap"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="como">
+    <div class="wrap">
+      <div class="head">
+        <h2>De Premiere a After Effects en tres pasos.</h2>
+      </div>
+      <ol class="flow">
+        <li>
+          <div class="fig srt" aria-hidden="true">
+            <code><em>1</em>00:00:00,100 --&gt; 00:00:00,420<br><b>Como</b></code>
+            <code><em>2</em>00:00:00,420 --&gt; 00:00:00,800<br><b>sería</b></code>
+            <code><em>3</em>00:00:00,800 --&gt; 00:00:01,350<br><b>tu experiencia</b></code>
+          </div>
+          <h3>Exporta el SRT</h3><p>En Premiere, subtítulos palabra por palabra en <code>.srt</code>.</p>
+        </li>
+        <li>
+          <div class="fig chips" aria-hidden="true">
+            <span class="c s">COMO</span><span class="c m">SERÍA</span><span class="c s">TU</span><span class="c k">★ EXPERIENCIA</span>
+            <span class="c s">SI</span><span class="c k">★ ENTENDIERAS</span><span class="c m">TODO</span>
+          </div>
+          <h3>Ajústalo en el panel</h3><p>Se agrupa en frases y se detectan tamaños y palabras clave. Cambia lo que quieras.</p>
+        </li>
+        <li>
+          <div class="fig tl" aria-hidden="true">
+            <div class="row"><span>Como</span><i style="--x:4%;--w:30%"></i></div>
+            <div class="row"><span>sería</span><i style="--x:14%;--w:28%"></i></div>
+            <div class="row"><span>tu</span><i style="--x:26%;--w:22%"></i></div>
+            <div class="row"><span>experiencia</span><i class="k" style="--x:34%;--w:40%"></i></div>
+            <div class="row"><span>pop.wav</span><i class="a" style="--x:34%;--w:9%"></i></div>
+            <b class="ph"></b>
+          </div>
+          <h3>Genera en After Effects</h3><p>Una capa por palabra, con su animación, sus sonidos y dentro de la zona segura.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
 
   <section class="block" id="estilos">
     <div class="wrap">
@@ -118,26 +189,49 @@
         <h2>Instalar toma un minuto.</h2>
         <p>Un solo instalador para After Effects 2024, 2025 y 2026. No pide permisos de administrador.</p>
       </div>
-      <ol class="steps">
-        <li><h3>Descarga</h3><p><a href="https://github.com/Applexby/laddersu/releases/latest/download/Laddersu-Setup.exe" data-dl>Laddersu-Setup.exe</a>, la última versión publicada.</p></li>
-        <li><h3>Instala</h3><p>Ábrelo y pulsa Siguiente. Si tenías Escalera Subs, se reemplaza.</p></li>
-        <li><h3>Abre After Effects</h3><p>Si ya estaba abierto, ciérralo y vuelve a abrirlo.</p></li>
-        <li><h3>Abre el panel</h3><p><kbd>Ventana</kbd> › <kbd>Extensiones</kbd> › <kbd>Laddersu</kbd>. En tu escritorio queda la app Laddersu para actualizar.</p></li>
-      </ol>
+      <div class="instGrid">
+        <ol class="steps">
+          <li><h3>Descarga</h3><p><a href="https://github.com/Applexby/laddersu/releases/latest/download/Laddersu-Setup.exe" data-dl>Laddersu-Setup.exe</a>, la última versión publicada.</p></li>
+          <li><h3>Instala</h3><p>Ábrelo y pulsa Siguiente. Si tenías Escalera Subs, se reemplaza.</p></li>
+          <li><h3>Abre After Effects</h3><p>Si ya estaba abierto, ciérralo y vuelve a abrirlo.</p></li>
+          <li><h3>Abre el panel</h3><p><kbd>Ventana</kbd> › <kbd>Extensiones</kbd> › <kbd>Laddersu</kbd>. En tu escritorio queda la app Laddersu para actualizar.</p></li>
+        </ol>
+        <figure class="appWin" aria-label="La app Laddersu para actualizar">
+          <div class="appBar"><span class="mark" aria-hidden="true"></span>Laddersu</div>
+          <div class="appBody">
+            <p class="sub">Actualizaciones del panel de After Effects</p>
+            <div class="appCard"><b>Hay una versión nueva</b><span>Instalada: 0.6.1 · Publicada: 0.6.3</span></div>
+            <div class="appBtns"><span class="ab main">Actualizar</span><span class="ab">Buscar de nuevo</span></div>
+          </div>
+          <figcaption>La app <b>Laddersu</b> queda en tu escritorio: ábrela y pulsa Actualizar cuando haya una versión nueva.</figcaption>
+        </figure>
+      </div>
       <p class="note">Windows puede mostrar “Windows protegió tu PC” porque el instalador no está firmado por una empresa. Pulsa <b>Más información</b> y luego <b>Ejecutar de todos modos</b>.</p>
     </div>
   </section>
 
+  <section class="final">
+    <div class="wrap">
+      <h2>Tu próximo reel, con subtítulos en minutos.</h2>
+      <a class="btn main" href="https://github.com/Applexby/laddersu/releases/latest/download/Laddersu-Setup.exe" data-dl>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+        Descargar para Windows
+      </a>
+      <p>After Effects 2024–2026 · Windows 10 y 11</p>
+    </div>
+  </section>
 </main>
 
 <footer class="foot">
   <div class="wrap">
     <span class="logo"><span class="mark" aria-hidden="true"></span>Laddersu</span>
     <span>Hecho por Applexby</span>
+    <button class="linkBtn" id="replayBuild" type="button" hidden>Ver cómo se arma la página</button>
     <span class="r"><a href="/guia/">Guía</a><a href="/novedades/">Novedades</a><a href="/consultas/">Consultas</a><a href="https://github.com/Applexby/laddersu">Código</a></span>
   </div>
 </footer>
 
-<script src="/assets/site.js"></script>
+<script src="/assets/site.js?v=3"></script>
+<script src="/assets/build.js?v=3"></script>
 </body>
 </html>

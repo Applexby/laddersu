@@ -1,5 +1,9 @@
 # Cambios
 
+## [0.6.3] - 2026-11-09
+- Biblioteca: las miniaturas muestran la composición entera (antes se veía solo la parte de arriba) y los botones de cada tarjeta ya no se cortan.
+- Web: nueva sección **Así se ve el panel** con capturas reales, pasos de Premiere a After Effects, la app de actualización y menú para el celular. La página se arma sola al entrar.
+
 ## [0.6.2] - 2026-11-09
 - APPLEXBY sin contorno y solo con entrada: cada palabra aparece con desenfoque y transparencia y se queda hasta el corte, sin salida.
 - Nueva web: página de **Novedades**, página de **Consultas** para reportar errores o sugerir mejoras en GitHub, y demostración en un iPhone.

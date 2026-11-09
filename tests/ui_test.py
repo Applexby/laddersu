@@ -24,7 +24,7 @@ window.__adobe_cep__ = {
   getSystemPath: function(t){ return t==='extension' ? 'file:///C:/ext' : 'file:///C:/ud'; },
   evalScript: function(s, cb){
     var r = '', delay = 0;
-    if (s.indexOf('ES_status')>=0) r = '{"engine":true,"fonts":true,"ver":"0.6.2","ev":"0.6.2","ae":"24.0"}';
+    if (s.indexOf('ES_status')>=0) r = '{"engine":true,"fonts":true,"ver":"0.6.3","ev":"0.6.3","ae":"24.0"}';
     else if (s.indexOf('ES_compInfo')>=0) r = '{"ok":true,"name":"Reel","w":1080,"h":1920,"fps":30,"dur":60}';
     else if (s.indexOf('ES_listFonts')>=0) r = JSON.stringify({ok:true,fonts:[{n:'Arial-BoldMT',f:'Arial',s:'Bold'},{n:'Anton-Regular',f:'Anton',s:'Regular'},{n:'Montserrat-ExtraBold',f:'Montserrat',s:'ExtraBold'}]});
     else if (s.indexOf('ES_capture')>=0) r = JSON.stringify(window.__capture);
