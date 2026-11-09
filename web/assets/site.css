@@ -161,3 +161,8 @@ kbd { font: 600 13px var(--body); padding: 1px 7px; border-radius: 6px; backgrou
 .doc td, .doc th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); color: var(--soft); vertical-align: top; }
 .doc th { color: var(--ink); font-weight: 650; }
 @media (max-width: 860px) { .guide { grid-template-columns: 1fr; } .toc { display: none; } }
+
+/* sin version publicada todavia */
+.soon { opacity: .55; cursor: default; pointer-events: none; box-shadow: none !important; }
+.soonNote { margin-top: 14px; font-size: 14px; color: var(--soft); max-width: 50ch; }
+.soonNote[hidden] { display: none; }

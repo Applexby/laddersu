@@ -96,6 +96,25 @@
   }
   if (!demo) { startMinis(); }
 
+  // ---------- botones de descarga ----------
+  // Si todavia no hay ninguna version publicada, los botones no llevan a un 404 de GitHub:
+  // pasan a "Disponible muy pronto" y explican el estado.
+  function noRelease() {
+    document.querySelectorAll('[data-dl]').forEach(function (a) {
+      a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); a.classList.add('soon');
+      if (a.classList.contains('btn') || a.classList.contains('pill')) {
+        var svg = a.querySelector('svg'); a.textContent = a.classList.contains('pill') ? 'Muy pronto' : 'Disponible muy pronto'; if (svg && a.classList.contains('btn')) { a.insertBefore(svg, a.firstChild); }
+      }
+    });
+    var vl = document.getElementById('verLine');
+    if (vl) { vl.textContent = 'Primera versión en preparación'; }
+    var note = document.getElementById('soonNote');
+    if (note) { note.hidden = false; }
+  }
+  fetch('https://api.github.com/repos/' + REPO + '/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { if (r.status === 404) { noRelease(); } })
+    .catch(function () {});
+
   // ---------- version publicada y novedades ----------
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function notesToList(md) {
