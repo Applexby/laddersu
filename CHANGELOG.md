@@ -1,5 +1,11 @@
 # Cambios
 
+## [0.7.1] - 2026-11-09
+- **Diseño muestra todas las frases**: la vista previa arriba, la lista completa al medio (la frase activa resaltada) y los ajustes abajo. El número de cada frase la elige entera y la lleva a la vista previa; puedes ocultar la vista previa con el ojo para ver más frases.
+- Los ajustes de Diseño ocupan menos: las pestañas (Animación, Estilo, Color…) se despliegan al tocarlas y se pliegan al tocarlas otra vez.
+- **Palabra por palabra**: en Frases, elige una o varias frases y pulsa **Palabra x palabra** para que cada palabra sea su propia frase, con el mismo estilo. Se deshace con Ctrl+Z.
+- App Laddersu: la barra para desplazar las novedades ahora es fina y oscura, como el resto de la app.
+
 ## [0.7.0] - 2026-11-09
 - **Editor en cuatro pasos**: Texto › Frases › Diseño › Generar. Cada paso muestra solo lo que necesitas y todos editan lo mismo: lo que cambias en uno se ve en los demás, con Deshacer en todos.
 - **Texto**: la transcripción en orden. Corrige, une con la siguiente, separa o quita palabras, y busca y reemplaza en toda la edición.

@@ -24,7 +24,7 @@ window.__adobe_cep__ = {
   getSystemPath: function(t){ return t==='extension' ? 'file:///C:/ext' : 'file:///C:/ud'; },
   evalScript: function(s, cb){
     var r = '', delay = 0;
-    if (s.indexOf('ES_status')>=0) r = '{"engine":true,"fonts":true,"ver":"0.7.0","ev":"0.7.0","ae":"24.0"}';
+    if (s.indexOf('ES_status')>=0) r = '{"engine":true,"fonts":true,"ver":"0.7.1","ev":"0.7.1","ae":"24.0"}';
     else if (s.indexOf('ES_compInfo')>=0) r = '{"ok":true,"name":"Reel","w":1080,"h":1920,"fps":30,"dur":60}';
     else if (s.indexOf('ES_listFonts')>=0) r = JSON.stringify({ok:true,fonts:[{n:'Arial-BoldMT',f:'Arial',s:'Bold'},{n:'Anton-Regular',f:'Anton',s:'Regular'},{n:'Montserrat-ExtraBold',f:'Montserrat',s:'ExtraBold'}]});
     else if (s.indexOf('ES_capture')>=0) r = JSON.stringify(window.__capture);
@@ -136,6 +136,12 @@ with sync_playwright() as p:
     page.locator('.frRow .cb').nth(0).click()
     page.locator('#frSel .sb.bx').click(); page.wait_for_timeout(100)
     check(page.evaluate('window.__ES.st.seqs[0].style') == 'karaoke', 'pasar una frase a caja que recorre')
+    nw0 = len(page.evaluate('window.__ES.st.seqs[0].words')); n2 = nseq()
+    page.locator('.frRow .cb').nth(0).click()
+    page.locator('#btnWordByWord').click(); page.wait_for_timeout(100)
+    check(nseq() == n2 + nw0 - 1 and all(len(page.evaluate('window.__ES.st.seqs[%d].words' % k)) == 1 for k in range(nw0)) and page.evaluate('window.__ES.st.seqs[1].style') == 'karaoke', 'palabra por palabra separa la frase y mantiene su estilo')
+    page.keyboard.press('Control+z'); page.wait_for_timeout(100)
+    check(nseq() == n2, 'deshacer palabra por palabra')
     page.click('#btnBase'); page.wait_for_timeout(100)
     check(page.locator('#baseView').is_visible() and page.locator('#btnGroup').inner_text() == 'Volver a agrupar', 'cambiar la base')
     page.locator('.baseAct .pill.ghost', has_text='Cancelar').click()
@@ -145,7 +151,15 @@ with sync_playwright() as p:
     page.click('#btnNext'); page.wait_for_timeout(200)
     check(page.locator('#monitor').is_visible(), 'en Diseño aparece la vista previa')
     si = page.evaluate("(function(){ var t = document.getElementById('monTitle').textContent; return parseInt(t.split(' ')[1], 10) - 1; })()")
-    check(page.locator('#seqs .chip').count() == len(page.evaluate('window.__ES.st.seqs[%d].words' % si)), 'solo las palabras de la frase de la vista previa')
+    check(page.locator('#seqs .seq').count() == nseq() and page.locator('#seqs .chip').count() == len(words()), 'en Diseño se ven todas las frases')
+    check(page.locator('#seqs .seq.active').get_attribute('data-si') == str(si), 'la frase de la vista previa esta resaltada')
+    page.locator('#seqs .seq').nth(2).locator('.num').click(); page.wait_for_timeout(100)
+    check(page.locator('#monTitle').inner_text().startswith('Frase 3 de') and page.evaluate('Object.keys(window.__ES.sel.m).length') == page.locator('#seqs .seq').nth(2).locator('.chip').count(), 'el numero elige la frase y la lleva a la vista previa')
+    page.keyboard.press('Escape'); page.locator('#seqs .seq').nth(0).locator('.num').click(); page.keyboard.press('Escape'); page.wait_for_timeout(50)
+    page.click('#monToggle'); page.wait_for_timeout(50)
+    check(page.locator('#monitor.closed').count() == 1 and not page.locator('#monCanvas').is_visible(), 'ocultar la vista previa')
+    page.click('#monToggle'); page.wait_for_timeout(50)
+    check(page.locator('#monCanvas').is_visible(), 'mostrar la vista previa')
     check('Elige una palabra' in page.locator('#insp').inner_text(), 'el panel de ajustes explica que hacer')
     page.click('#monNext'); page.wait_for_timeout(100)
     check(page.locator('#monTitle').inner_text().startswith('Frase 2 de'), 'navegar frase por frase')
@@ -156,6 +170,8 @@ with sync_playwright() as p:
     def cw(field):
         return page.evaluate("(function(){ var id=%s, r=null; window.__ES.st.seqs.forEach(function(q){ q.words.forEach(function(w){ if (w.id===id) r=w.c['%s']; }); }); return r; })()" % (wsel, field))
     check(page.locator('#insp .inspTabs button').count() == 7, 'ajustes por pestañas: animación, estilo, color, fuente, sonido, plantilla, quitar')
+    check(page.locator('#insp .inspBody').count() == 0, 'los ajustes empiezan plegados')
+    page.locator('#insp .inspTabs button', has_text='Animación').click(); page.wait_for_timeout(50)
     page.locator('#insp .inspBody .it', has_text='Pop').first.click(); page.wait_for_timeout(100)
     check(cw('trans') == 'pop', 'animacion desde el panel de ajustes')
     page.screenshot(path=SHOTS + '/07_diseno.png')
@@ -177,7 +193,7 @@ with sync_playwright() as p:
     check(any('Color' in x for x in labels) and not any('Sonido' in x for x in labels), 'Quitar lista solo lo aplicado')
     page.keyboard.press('Control+z'); page.wait_for_timeout(50)
     page.locator('#insp .inspScope button', has_text='toda la frase').click()
-    check(page.evaluate('Object.keys(window.__ES.sel.m).length') == page.locator('#seqs .chip').count(), 'elegir toda la frase')
+    check(page.evaluate('Object.keys(window.__ES.sel.m).length') == page.locator('#seqs .seq.active .chip').count(), 'elegir toda la frase')
     # menu en cascada sigue disponible con clic derecho
     def beside():
         r = page.locator('#ctx').bounding_box(); f = page.locator('#ctxFly').bounding_box()
@@ -203,7 +219,7 @@ with sync_playwright() as p:
     chip(page, 0).click(); chip(page, 0).click(button='right')
     page.locator('#ctx .it[data-k=pres]').click()
     page.locator('#ctxFly .it', has_text='Caja destacada').click(); page.wait_for_timeout(100)
-    check(page.evaluate('window.__ES.st.seqs.some(function(q){return q.pres;})') and page.locator('#seqs .presTag').count() == 1, 'plantilla de texto aplicada')
+    check(page.evaluate('window.__ES.st.seqs.some(function(q){return q.pres;})') and page.locator('#seqs .seq.pres').count() == 1, 'plantilla de texto aplicada')
     check('plantilla' in page.locator('#monMeta').inner_text(), 'la vista previa muestra la plantilla')
 
     # --- aviso de actualizacion ---

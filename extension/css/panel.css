@@ -113,7 +113,7 @@ input[type=color]::-webkit-color-swatch-wrapper{padding:2px} input[type=color]::
 .iconBtn.play{color:var(--text);background:var(--raised);border-radius:50%;width:26px;height:26px;padding:0}
 .iconBtn.play:hover{background:var(--violet);color:#fff}
 .monBody{position:relative;background:#0c0c0e;line-height:0}
-.monBody canvas{width:100%;display:block;cursor:pointer}
+.monBody canvas{width:100%;display:block;cursor:pointer;margin:0 auto}
 .monitor.closed .monBody{display:none}
 
 /* ---------- frases ---------- */
@@ -545,9 +545,24 @@ kbd{background:var(--surface);border:1px solid var(--line2);border-bottom-width:
 #step-diseno .toolbar{flex-wrap:nowrap}
 #step-diseno .fontRow{flex:1;margin:0;min-width:0}
 .monTitle{font-weight:700;padding:0 2px}
-.seqs.one{padding-bottom:0}
-.seqs.one .seq{padding:4px 0}
-.seqs.one .chips{padding-left:2px}
+.seqs.all{padding-bottom:6px}
+.seqs.all .seq{padding:4px 6px 4px 0;align-items:center;box-shadow:inset 2px 0 0 transparent;border-radius:10px}
+.seqs.all .seq.st{box-shadow:inset 2px 0 0 rgba(245,165,36,.55)} .seqs.all .seq.ln{box-shadow:inset 2px 0 0 var(--ln)} .seqs.all .seq.bx{box-shadow:inset 2px 0 0 var(--bx)} .seqs.all .seq.ax{box-shadow:inset 2px 0 0 var(--ax)} .seqs.all .seq.pr{box-shadow:inset 2px 0 0 var(--pr)}
+.seqs.all .seq.active{background:rgba(124,92,255,.10)}
+.seqs.all .lead{padding-top:0}
+.seqs.all .gap{height:2px}
+.tag.sm{font-size:9.5px;padding:1px 6px;align-self:center;flex:none}
+/* Diseño ocupa el alto del panel: vista previa arriba, todas las frases al medio (con su scroll) y ajustes abajo */
+.page.fit{display:flex;flex-direction:column;overflow:hidden}
+.page.fit>*{flex:none}
+.page.fit>#step-diseno{flex:1;min-height:0;display:flex;flex-direction:column}
+#step-diseno>*{flex:none}
+.page.fit .monitor{position:relative;top:0;margin-bottom:6px}
+.page.fit #seqs{flex:1 1 auto;min-height:96px;overflow:auto;margin:0 -4px;padding:2px 4px 6px;border-radius:10px}
+.page.fit .insp{margin-top:6px;box-shadow:0 -10px 18px -12px rgba(0,0,0,.8)}
+#step-diseno .inspBody,#step-diseno .inspBody.grid{max-height:min(150px,22vh);overflow:auto}
+.monitor.closed .monHead{padding-bottom:4px}
+#monToggle[aria-pressed=false]{color:var(--dim)}
 .insp{margin-top:8px;padding:10px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
 .inspEmpty{display:flex;flex-direction:column;align-items:flex-start;gap:5px;color:var(--mut);line-height:1.45}
 .inspEmpty b{color:var(--text)}
@@ -619,3 +634,13 @@ kbd{background:var(--surface);border:1px solid var(--line2);border-bottom-width:
 .inspBody.grid .it .chk{display:none}
 .inspBody.grid .it .k{display:none}
 .inspBody.grid hr,.inspBody.grid .lab{grid-column:1/-1}
+
+/* ajustes de Diseño compactos: las pestañas se despliegan al tocarlas */
+.inspScope .lookLink{width:auto;margin:0 0 0 auto;padding:3px 8px;gap:6px;border-radius:99px}
+.inspScope .lookLink span{flex:none}
+#step-diseno .inspTabs{margin-bottom:0}
+#step-diseno .inspBody{margin-top:6px}
+#step-diseno .inspBody .animPrev{height:38px}
+.page.fit .insp{flex:0 1 auto;min-height:0;overflow:auto;padding:8px 10px}
+.frSel{flex-wrap:wrap}
+.frSel .sb{white-space:nowrap}

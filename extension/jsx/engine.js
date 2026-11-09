@@ -6,7 +6,7 @@
  */
 var ES = (function () {
   var ES = {};
-  ES.VERSION = '0.7.0';
+  ES.VERSION = '0.7.1';
 
   // ---------- Utilidades ----------
   function trim(s) { return String(s).replace(/^\s+|\s+$/g, ''); }

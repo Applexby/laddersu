@@ -34,7 +34,7 @@ var Model = (function () {
   };
 
   // ---------- construccion ----------
-  M.HOST_VER = '0.7.0';
+  M.HOST_VER = '0.7.1';
   M.newId = function () { uid++; return uid; };
   // tras restaurar un estado guardado: evita ids repetidos
   M.reseed = function (st) {
@@ -381,6 +381,20 @@ var Model = (function () {
     M.fitTimes(s);
     st.seqs.splice(si + 1, 0, b);
     return true;
+  };
+
+  // palabra por palabra: cada palabra de las frases elegidas pasa a ser su propia frase (mismo estilo)
+  M.wordByWord = function (st, sis) {
+    var made = 0, k, si, s;
+    sis = sis.slice().sort(function (a, b) { return b - a; });
+    for (k = 0; k < sis.length; k++) {
+      si = sis[k]; s = st.seqs[si];
+      if (!s || s.pres) { continue; }
+      while (st.seqs[si].words.length > 1) {
+        if (M.split(st, si, st.seqs[si].words.length - 1)) { made++; } else { break; }
+      }
+    }
+    return made;
   };
 
   M.merge = function (st, si) {

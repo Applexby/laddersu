@@ -326,5 +326,12 @@ console.log(n + ' pruebas de modelo OK');
   S.szL = 99; assert.strictEqual(M.changedSeqs(st, S), null, 'cambiar ajustes: todo');
   S.szL = 85; M.markGenerated(st, S);
   M.merge(st, 0); assert.strictEqual(M.changedSeqs(st, S), null, 'si desaparece una frase generada: todo');
-  console.log('largos por estilo, reagrupar un tramo y frases cambiadas OK');
+  // palabra por palabra
+  var wst = M.fromEntries(E, M.defaults()), w0 = M.allIds(wst).length, k0 = wst.seqs[0].words.length, n0 = wst.seqs.length;
+  wst.seqs[0].style = 'line';
+  var made = M.wordByWord(wst, [0]);
+  assert.strictEqual(made, k0 - 1); assert.strictEqual(wst.seqs.length, n0 + k0 - 1);
+  assert.strictEqual(M.allIds(wst).length, w0, 'no se pierden palabras');
+  for (var z = 0; z < k0; z++) { assert.strictEqual(wst.seqs[z].words.length, 1); assert.strictEqual(wst.seqs[z].style, 'line', 'mantiene el estilo'); }
+  console.log('largos por estilo, reagrupar un tramo, frases cambiadas y palabra por palabra OK');
 })();

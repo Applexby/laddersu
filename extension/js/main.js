@@ -32,7 +32,7 @@
   var sel = Model.newSel();
   var S = Model.defaults();
   var fonts = [], fontsState = 'loading';
-  var ui = { tab: 'editor', step: 'texto', lib: 'comp', sndCat: 'Todos', drag: null, fsel: {}, inspTab: 'anim', genOnly: true, gen: null };
+  var ui = { tab: 'editor', step: 'texto', lib: 'comp', sndCat: 'Todos', drag: null, fsel: {}, inspTab: '', genOnly: true, gen: null };
   var sounds = [];
   var EXT = '';
   var history = [];
@@ -992,6 +992,7 @@
 
   function render() {
     if (!st.seqs.length && ui.step !== 'texto') { ui.step = 'texto'; }
+    $('tab-editor').classList.toggle('fit', ui.step === 'diseno' && !!st.seqs.length);
     renderStepper();
     if (ui.step === 'texto') { renderTexto(); }
     else if (ui.step === 'frases') { renderFrases(); }
@@ -1000,19 +1001,34 @@
     updateButtons();
     if (ui.tab === 'library') { if (ui.lib === 'snd') { renderSounds(); } else if (ui.lib === 'pres') { renderPres(); } }
   }
-  // paso 3: solo las palabras de la frase activa (la de la vista previa) + el panel de ajustes
+  // paso 3: todas las frases (la activa resaltada y en la vista previa) + el panel de ajustes abajo
   function renderDiseno() {
     var box = $('seqs'), act = activeSi();
     box.innerHTML = '';
     if (act >= 0) {
-      var seq = st.seqs[act], row = h('div', 'seq active' + (seq.pres ? ' pres' : '')); row.setAttribute('data-si', act);
-      var chips = h('div', 'chips');
-      seq.words.forEach(function (w) { var c = chipEl(w, seq); c.draggable = false; chips.appendChild(c); });
-      row.appendChild(chips);
-      if (seq.pres) { var d = pstore.get(seq.pres); row.appendChild(h('span', 'presTag', d ? d.name : 'Plantilla')); }
-      box.appendChild(row);
+      box.appendChild(gapEl(0));
+      st.seqs.forEach(function (seq, si) {
+        var k = seq.pres ? 'pres' : Model.effStyle(seq, S);
+        var row = h('div', 'seq ' + (STYLE_CLS[k] || 'pr') + (si === act ? ' active' : '') + (seq.pres ? ' pres' : '')); row.setAttribute('data-si', si);
+        var lead = h('div', 'lead');
+        var num = h('button', 'num', String(si + 1)); num.type = 'button';
+        num.title = 'Elegir toda la frase (Ctrl suma)'; num.setAttribute('aria-label', 'Elegir la frase ' + (si + 1));
+        num.addEventListener('click', function (ev) { Model.selectSeq(st, sel, si, ev.ctrlKey || ev.metaKey || ev.shiftKey); setActiveSeq(si); ui.activeId = seq.words[0].id; render(); });
+        lead.appendChild(num); lead.appendChild(h('span', 'tc', fmtClock(seq.start)));
+        row.appendChild(lead);
+        var chips = h('div', 'chips');
+        seq.words.forEach(function (w) { chips.appendChild(chipEl(w, seq)); });
+        row.appendChild(chips);
+        row.appendChild(h('span', 'tag sm ' + (STYLE_CLS[k] || 'pr'), k === 'pres' ? ((pstore.get(seq.pres) || {}).name || 'Plantilla') : STYLE_NAME[k]));
+        row.addEventListener('click', function (ev) { if (ev.target === row || ev.target === chips) { stopPlay(); setActiveSeq(si); render(); } });
+        row.addEventListener('dragover', function (ev) { if (!ui.drag) { return; } ev.preventDefault(); clearDropMarks(); row.classList.add('dropHere'); ui.dropInfo = { seq: seq, before: null }; });
+        row.addEventListener('drop', function (ev) { ev.preventDefault(); doDrop(); });
+        box.appendChild(row);
+        box.appendChild(gapEl(si + 1));
+      });
     }
     renderInspector(); drawPreview();
+    if (ui.scrollAct !== act) { ui.scrollAct = act; var ae = box.querySelector('.seq.active'); if (ae) { ae.scrollIntoView({ block: 'nearest' }); } }
   }
 
   // ----- barra de seleccion con acciones rapidas -----
@@ -1033,10 +1049,8 @@
     if (!n) {
       var e = h('div', 'inspEmpty');
       e.appendChild(h('b', '', 'Elige una palabra'));
-      e.appendChild(h('span', '', 'Tócala aquí arriba o en la vista previa. Con Ctrl sumas varias; clic derecho abre todos los efectos.'));
-      var all = h('button', 'pill ghost small', 'Elegir toda la frase'); all.type = 'button';
-      all.addEventListener('click', function () { Model.selectSeq(st, sel, activeSi(), false); render(); });
-      e.appendChild(all); box.appendChild(e); return;
+      e.appendChild(h('span', '', 'Tócala en la lista o en la vista previa. El número elige la frase entera; Ctrl suma varias.'));
+      box.appendChild(e); return;
     }
     var u = function (f) { return Model.uniform(st, sel, f); };
     var head = h('div', 'inspHead');
@@ -1052,13 +1066,16 @@
     var tabs = h('div', 'inspTabs'); tabs.setAttribute('role', 'tablist');
     INSP_TABS.forEach(function (t) {
       var b = h('button', ui.inspTab === t[0] ? 'on' : '', t[1]); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', ui.inspTab === t[0] ? 'true' : 'false');
-      b.addEventListener('click', function () { ui.inspTab = t[0]; renderInspector(); });
+      b.addEventListener('click', function () { ui.inspTab = ui.inspTab === t[0] ? '' : t[0]; renderInspector(); });
       tabs.appendChild(b);
     });
     box.appendChild(tabs);
-    var body = h('div', 'inspBody menu inline' + ({ anim: ' grid', sound: ' grid', pres: ' grid' }[ui.inspTab] || ''));
-    var after = BUILD[ui.inspTab](body);
-    box.appendChild(body);
+    var after = null;
+    if (ui.inspTab && BUILD[ui.inspTab]) {
+      var body = h('div', 'inspBody menu inline' + ({ anim: ' grid', sound: ' grid', pres: ' grid' }[ui.inspTab] || ''));
+      after = BUILD[ui.inspTab](body);
+      box.appendChild(body);
+    }
     // a que se aplica
     var scope = h('div', 'inspScope'), si = activeSi(), stl = st.seqs[si] ? Model.effStyle(st.seqs[si], S) : '';
     scope.appendChild(h('span', '', 'Elegir'));
@@ -1070,12 +1087,12 @@
       render(); say('Elegidas todas las frases de ' + STYLE_NAME[stl].toLowerCase() + ': lo que apliques va a todas.', 'ok');
     });
     scope.appendChild(b1); scope.appendChild(h('span', '', '·')); scope.appendChild(b2);
-    box.appendChild(scope);
-    var look = h('button', 'lookLink'); look.type = 'button';
-    look.appendChild(h('i', 'dot ' + (STYLE_CLS[stl] || 'st'))); look.appendChild(h('span', '', 'Aspecto de ' + STYLE_NAME[stl].toLowerCase() + ': tamaños, colores y más'));
+    var look = h('button', 'lookLink'); look.type = 'button'; look.title = 'Aspecto de ' + STYLE_NAME[stl].toLowerCase() + ': tamaños, colores y más';
+    look.appendChild(h('i', 'dot ' + (STYLE_CLS[stl] || 'st'))); look.appendChild(h('span', '', 'Aspecto'));
     look.appendChild(icon('chev'));
     look.addEventListener('click', function () { openLook(stl); });
-    box.appendChild(look);
+    scope.appendChild(look);
+    box.appendChild(scope);
     if (after && ui.inspTab !== 'font') { after(); }
   }
   function quick(patch) { mutate(function () { Model.applyPatch(st, sel, patch); }); }
@@ -1195,7 +1212,10 @@
     var cv = $('monCanvas'), body = $('monBody'), cw = body.clientWidth || 400, dpr = window.devicePixelRatio || 1;
     var ya = Math.max(0, L.H * (S.zoneTop - 3) / 100), yb = Math.min(L.H, L.H * (S.zoneBottom + 3) / 100);
     var k = cw / L.W, ch = Math.round((yb - ya) * k);
-    if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) { cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); cv.style.height = ch + 'px'; }
+    // la vista previa no se come el panel: alto maximo segun la ventana, centrada
+    var maxH = Math.max(100, Math.round((window.innerHeight || 760) * 0.24));
+    if (ch > maxH) { k = maxH / (yb - ya); ch = maxH; cw = Math.round(L.W * k); }
+    if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) { cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); cv.style.height = ch + 'px'; cv.style.width = cw + 'px'; }
     var ctx = cv.getContext('2d');
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
     // fondo tipo video
@@ -1372,6 +1392,16 @@
     })();
   }
   $('monPlay').addEventListener('click', togglePlay);
+  function applyMonToggle() {
+    var open = lsGet('laddersu.monOpen') !== '0';
+    $('monitor').classList.toggle('closed', !open);
+    $('monToggle').setAttribute('aria-pressed', open ? 'true' : 'false');
+    $('monToggle').setAttribute('aria-label', open ? 'Ocultar la vista previa' : 'Mostrar la vista previa');
+  }
+  $('monToggle').addEventListener('click', function () {
+    lsSet('laddersu.monOpen', $('monitor').classList.contains('closed') ? '1' : '0'); applyMonToggle(); drawPreview();
+  });
+  applyMonToggle();
   $('monPrev').addEventListener('click', function () { stopPlay(); setActiveSeq(Math.max(0, activeSi() - 1)); render(); });
   $('monNext').addEventListener('click', function () { stopPlay(); setActiveSeq(Math.min(st.seqs.length - 1, activeSi() + 1)); render(); });
   $('monCanvas').addEventListener('click', function (ev) {
@@ -1941,6 +1971,14 @@
       mutate(function () { var k2; for (k2 = sis.length - 1; k2 > 0; k2--) { if (sis[k2] === sis[k2 - 1] + 1) { Model.merge(st, sis[k2 - 1]); } } }); ui.fsel = {}; render(); say('Frases unidas.', 'ok');
     });
     bar.appendChild(jn);
+    var nw = 0; sis.forEach(function (k3) { if (!st.seqs[k3].pres) { nw += st.seqs[k3].words.length - 1; } });
+    var wb = h('button', 'sb', 'Palabra x palabra'); wb.type = 'button'; wb.id = 'btnWordByWord'; wb.disabled = nw < 1;
+    wb.title = 'Separar cada palabra en su propia frase (mantiene el estilo)';
+    wb.addEventListener('click', function () {
+      var made = 0; mutate(function () { made = Model.wordByWord(st, sis); }); ui.fsel = {}; render();
+      say('Separadas palabra por palabra: ' + made + ' frases nuevas.', 'ok');
+    });
+    bar.appendChild(wb);
     var x = h('button', 'iconBtn'); x.type = 'button'; x.setAttribute('aria-label', 'Quitar la selección'); x.appendChild(icon('x'));
     x.addEventListener('click', function () { ui.fsel = {}; renderFrasesList(); });
     bar.appendChild(x);

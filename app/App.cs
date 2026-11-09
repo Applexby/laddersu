@@ -36,7 +36,10 @@ namespace Laddersu
         const int SW = 300;
 
         readonly Label instVer = new Label(), state = new Label(), sub2 = new Label(), aeNote = new Label(), notesHead = new Label(), notesSub = new Label();
-        readonly RichTextBox notes = new RichTextBox();
+        readonly NotesBox notes = new NotesBox();
+        readonly Panel view = new Panel();
+        readonly SlimBar sbar = new SlimBar();
+        int offset;
         readonly ProgressBar bar = new ProgressBar();
         readonly Button main = new Button(), check = new Button();
         readonly bool justUpdated;
@@ -112,9 +115,19 @@ namespace Laddersu
             Controls.Add(notesSub);
             var box = new Panel { Location = new Point(SW + 28, 92), Size = new Size(940 - SW - 56, 620 - TitleBar.H - 92 - 28), BackColor = Card, Padding = new Padding(18, 14, 8, 14) };
             box.Paint += (s, e) => { using (var p = new Pen(Line)) { e.Graphics.DrawRectangle(p, 0, 0, box.Width - 1, box.Height - 1); } };
-            notes.Dock = DockStyle.Fill; notes.ReadOnly = true; notes.BorderStyle = BorderStyle.None; notes.BackColor = Card; notes.ForeColor = Text1;
-            notes.ScrollBars = RichTextBoxScrollBars.Vertical; notes.TabStop = false; notes.DetectUrls = false; notes.Font = new Font("Segoe UI", 10.5f);
-            box.Controls.Add(notes);
+            // novedades sin la barra de Windows: el texto se mueve dentro de un recuadro y la barra es nuestra (fina y oscura)
+            view.Dock = DockStyle.Fill; view.BackColor = Card;
+            notes.ReadOnly = true; notes.BorderStyle = BorderStyle.None; notes.BackColor = Card; notes.ForeColor = Text1;
+            notes.ScrollBars = RichTextBoxScrollBars.None; notes.TabStop = false; notes.DetectUrls = false; notes.Font = new Font("Segoe UI", 10.5f);
+            notes.WordWrap = true; notes.Location = new Point(0, 0); notes.Cursor = Cursors.Default;
+            notes.Wheel += d => ScrollBy(-d / 120 * 54);
+            notes.ContentsResized += (s, e) => FitNotes(e.NewRectangle.Height);
+            view.Controls.Add(notes);
+            sbar.Dock = DockStyle.Right; sbar.Width = 12; sbar.BackColor = Card;
+            sbar.Scrolled += v => { offset = v; notes.Top = -offset; };
+            view.Resize += (s, e) => FitNotes(-1);
+            box.Controls.Add(view);
+            box.Controls.Add(sbar);
             Controls.Add(box);
 
             // barra de titulo propia (botones rojo, amarillo y verde a la izquierda, como en macOS)
@@ -164,6 +177,27 @@ namespace Laddersu
             state.Text = st; state.ForeColor = c; sub2.Text = v;
         }
 
+        int contentH = 0;
+        void FitNotes(int h)
+        {
+            if (h < 0)
+            {
+                h = contentH;
+                if (h <= 0 && notes.TextLength > 0) { h = notes.GetPositionFromCharIndex(notes.TextLength - 1).Y + notes.Font.Height * 2; }
+            }
+            contentH = h;
+            notes.Width = Math.Max(50, view.ClientSize.Width - 6);
+            notes.Height = Math.Max(view.ClientSize.Height, h + 16);
+            sbar.Setup(notes.Height, view.ClientSize.Height);
+            ScrollBy(0);
+        }
+        void ScrollBy(int d)
+        {
+            int max = Math.Max(0, notes.Height - view.ClientSize.Height);
+            offset = Math.Max(0, Math.Min(max, offset + d));
+            notes.Top = -offset; sbar.Value = offset;
+        }
+
         // novedades con formato: version en grande, fecha, etiqueta y cada cambio con su punto
         void ShowNotes()
         {
@@ -196,7 +230,7 @@ namespace Laddersu
                     notes.SelectionStart = notes.TextLength; notes.SelectionIndent = 0; notes.SelectionHangingIndent = 0;
                 }
             }
-            notes.SelectionStart = 0; notes.ScrollToCaret();
+            notes.SelectionStart = 0; offset = 0; contentH = 0; FitNotes(-1);
         }
         void Add(string t, float size, bool bold, Color c)
         {
@@ -269,6 +303,74 @@ namespace Laddersu
             string m = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
             return m.Length > 70 ? m.Substring(0, 70) + "…" : m;
         }
+    }
+
+    // RichTextBox que no se desplaza solo: la rueda del raton la maneja la ventana (barra propia)
+    class NotesBox : RichTextBox
+    {
+        public event Action<int> Wheel;
+        [DllImport("user32.dll")] static extern bool HideCaret(IntPtr h);
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == 0x020A)   // WM_MOUSEWHEEL
+            {
+                int delta = (short)((long)m.WParam >> 16 & 0xFFFF);
+                if (Wheel != null) { Wheel(delta); }
+                return;
+            }
+            base.WndProc(ref m);
+            if (m.Msg == 0x0007 || m.Msg == 0x0201) { try { HideCaret(Handle); } catch { } }   // sin cursor de texto
+        }
+    }
+
+    // barra de desplazamiento fina, redondeada y oscura, como la del panel
+    class SlimBar : Control
+    {
+        public event Action<int> Scrolled;
+        int total = 1, page = 1, val, dragFrom = -1, dragVal;
+        bool hover;
+        public SlimBar()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
+            Cursor = Cursors.Default;
+        }
+        public void Setup(int totalH, int pageH) { total = Math.Max(1, totalH); page = Math.Max(1, pageH); Visible = total > page + 2; Invalidate(); }
+        public int Value { get { return val; } set { val = value; Invalidate(); } }
+        Rectangle Thumb()
+        {
+            int h = Height - 8, th = Math.Max(36, h * page / total), range = Math.Max(1, total - page);
+            int y = 4 + (h - th) * Math.Min(val, range) / range;
+            return new Rectangle(Width - 9, y, 5, th);
+        }
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics; g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            var r = Thumb();
+            if (hover || dragFrom >= 0) { r = new Rectangle(r.X - 2, r.Y, r.Width + 2, r.Height); }
+            using (var path = new System.Drawing.Drawing2D.GraphicsPath())
+            {
+                int d = r.Width;
+                path.AddArc(r.X, r.Y, d, d, 180, 180); path.AddArc(r.X, r.Bottom - d, d, d, 0, 180); path.CloseFigure();
+                using (var b = new SolidBrush(dragFrom >= 0 ? Color.FromArgb(150, 150, 162) : hover ? Color.FromArgb(110, 110, 122) : Color.FromArgb(72, 72, 82))) { g.FillPath(b, path); }
+            }
+        }
+        protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hover = false; Invalidate(); base.OnMouseLeave(e); }
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            var r = Thumb();
+            if (e.Y < r.Y || e.Y > r.Bottom) { Set(val + (e.Y < r.Y ? -page : page)); return; }
+            dragFrom = e.Y; dragVal = val; Capture = true; Invalidate();
+        }
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (dragFrom < 0) { return; }
+            int h = Height - 8, th = Math.Max(36, h * page / total);
+            Set(dragVal + (e.Y - dragFrom) * Math.Max(1, total - page) / Math.Max(1, h - th));
+        }
+        protected override void OnMouseUp(MouseEventArgs e) { dragFrom = -1; Capture = false; Invalidate(); }
+        protected override void OnMouseWheel(MouseEventArgs e) { Set(val - e.Delta / 120 * 54); }
+        void Set(int v) { val = Math.Max(0, Math.Min(total - page, v)); Invalidate(); if (Scrolled != null) { Scrolled(val); } }
     }
 
     // el isotipo de Laddersu (tres escalones)
