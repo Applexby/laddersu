@@ -1,0 +1,76 @@
+name: Publicar versión
+
+# Al subir una etiqueta vX.Y.Z se prueban los tests, se arma el paquete del panel, se compila el instalador .exe
+# y se publica todo en GitHub Releases. El panel "Laddersu · Actualizaciones" lee esa publicación.
+# No hace falta ningún secreto: usa el permiso propio del repositorio (GITHUB_TOKEN).
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Versión
+        id: ver
+        shell: bash
+        run: |
+          VER=$(node -p "require('./extension/version.json').version")
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v$VER" ]; then
+            echo "::error::La etiqueta ${GITHUB_REF_NAME} no coincide con extension/version.json ($VER)"; exit 1
+          fi
+          node tools/check-version.js
+
+      - name: Pruebas
+        shell: bash
+        run: |
+          for f in tests/*.test.js; do echo "== $f"; node "$f"; done
+
+      - name: Paquete del panel (.zip)
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          New-Item -ItemType Directory -Force out | Out-Null
+          Compress-Archive -Path extension\* -DestinationPath "out\laddersu-panel-$v.zip" -Force
+
+      - name: Instalador (.exe)
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          & $iscc "/DAppVer=$v" installer\laddersu.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item "out\Laddersu-Setup-$v.exe" "out\Laddersu-Setup.exe"
+
+      - name: latest.json (con huellas SHA-256)
+        shell: bash
+        run: node tools/make-latest.js "${{ steps.ver.outputs.version }}" out
+
+      - name: Publicar en GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: Laddersu ${{ steps.ver.outputs.version }}
+          body_path: out/NOTES.md
+          make_latest: true
+          files: |
+            out/Laddersu-Setup-${{ steps.ver.outputs.version }}.exe
+            out/Laddersu-Setup.exe
+            out/laddersu-panel-${{ steps.ver.outputs.version }}.zip
+            out/latest.json

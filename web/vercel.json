@@ -1,0 +1,10 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": true,
+  "headers": [
+    { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }] }
+  ],
+  "redirects": [
+    { "source": "/descargar", "destination": "https://github.com/Applexby/laddersu/releases/latest/download/Laddersu-Setup.exe", "permanent": false }
+  ]
+}

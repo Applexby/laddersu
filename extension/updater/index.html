@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laddersu · Actualizaciones</title>
+<link rel="stylesheet" href="updater.css">
+</head>
+<body>
+<main id="app">
+  <header class="top">
+    <span class="mark" aria-hidden="true"></span>
+    <h1>Laddersu</h1>
+    <span class="sub">Actualizaciones</span>
+  </header>
+
+  <section class="card" id="stateCard" aria-live="polite">
+    <div class="vers">
+      <div><small>Instalada</small><b id="curVer">—</b></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div><small>Publicada</small><b id="newVer">—</b></div>
+    </div>
+    <p id="stateText" class="state">Buscando la última versión…</p>
+    <div id="bar" class="bar" hidden><i id="barFill"></i></div>
+    <div class="actions">
+      <button id="btnUpdate" class="btn primary" type="button" hidden>Actualizar</button>
+      <button id="btnCheck" class="btn" type="button">Buscar ahora</button>
+      <button id="btnReload" class="btn primary" type="button" hidden>Recargar paneles</button>
+    </div>
+  </section>
+
+  <section class="card notesCard" id="notesCard" hidden>
+    <h2 id="notesTitle">Novedades</h2>
+    <pre id="notes"></pre>
+  </section>
+
+  <section class="card opts">
+    <label class="opt"><span>Buscar actualizaciones al abrir</span><button id="optCheck" class="switch" type="button" role="switch" aria-checked="true"></button></label>
+    <label class="opt"><span>Instalar automáticamente</span><button id="optAuto" class="switch" type="button" role="switch" aria-checked="false"></button></label>
+    <p class="hint">Solo se reemplazan los archivos del panel. Tus ediciones, bibliotecas y sonidos propios se mantienen.</p>
+  </section>
+
+  <footer class="foot">
+    <button class="link" id="lnkReleases" type="button">Todas las versiones</button>
+    <button class="link" id="lnkExe" type="button">Descargar instalador (.exe)</button>
+    <span id="checked" class="muted"></span>
+  </footer>
+</main>
+<script src="../js/updates.js"></script>
+<script src="updater.js"></script>
+</body>
+</html>
