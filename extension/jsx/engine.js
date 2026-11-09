@@ -6,7 +6,7 @@
  */
 var ES = (function () {
   var ES = {};
-  ES.VERSION = '0.6.0';
+  ES.VERSION = '0.6.1';
 
   // ---------- Utilidades ----------
   function trim(s) { return String(s).replace(/^\s+|\s+$/g, ''); }
@@ -102,6 +102,34 @@ var ES = (function () {
     flush();
     return seqs;
   };
+
+  // ---------- 3b. Frases cortas (estilos de una linea: "Una linea" y APPLEXBY) ----------
+  // Pocas palabras por frase: corta al llegar a maxWords (por defecto 2) o a maxChars letras, en cada pausa
+  // (punto, coma, silencio > gap) y nunca deja una palabra funcion colgando al final ("o | simplemente").
+  // Devuelve [[elementos originales]] (no copia: sirve para reagrupar palabras del panel sin perder sus ajustes).
+  ES.groupShort = function (items, opts) {
+    opts = opts || {};
+    var maxW = opts.maxWords || 2, gap = opts.gap == null ? 0.4 : opts.gap, maxC = opts.maxChars || 18;
+    var out = [], cur = [], count = 0, chars = 0, i;
+    function flush() { if (cur.length) { out.push(cur); } cur = []; count = 0; chars = 0; }
+    for (i = 0; i < items.length; i++) {
+      var e = items[i], t = trim(String(e.text)), n = t ? t.split(/\s+/).length : 1, len = stripPunct(t).length;
+      if (cur.length) {
+        var prev = cur[cur.length - 1], pt = trim(String(prev.text));
+        var pause = endsSentence(pt) || /[,;:]["')\]]*$/.test(pt) || (e.start - prev.end) > gap;
+        var full = (count + n) > maxW || (chars + 1 + len) > maxC;
+        var dangling = ES.isFunctionWord(pt);
+        var hard = (count + n) > (maxW + 2);
+        // una palabra funcion que llenaria la frase se guarda para la siguiente, junto a su complemento
+        var fnFills = maxW > 1 && !dangling && ES.isFunctionWord(t) && (count + n) >= maxW;
+        if (pause || hard || fnFills || (full && !dangling)) { flush(); }
+      }
+      cur.push(e); count += n; chars += (cur.length > 1 ? 1 : 0) + len;
+    }
+    flush();
+    return out;
+  };
+  ES.isLineStyle = function (style) { return style === 'line' || style === 'applexby'; };
 
   // ---------- 4. Clasificacion de tamanos ----------
   // devuelve para cada palabra {size:'S'|'M'|'L', brand:bool}

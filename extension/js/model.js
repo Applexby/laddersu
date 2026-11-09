@@ -22,14 +22,19 @@ var Model = (function () {
       newComp: false, compW: 1080, compH: 1920, compFps: 30,
       groupGap: 0.4, groupWeight: 4,
       editStyle: 'lockup', karSize: 'M', karBox: '#ffd400', karMove: 0.12, karRadius: 14, replacePrev: true,
-      // estilo APPLEXBY (T1): una linea, Archivo Bold, blanco, clave en rojo, tercio inferior
-      apxFont: 'Archivo-Bold', apxSize: 64, apxColor: '#f5f5f5', apxKey: '#ff0101', apxCenterY: 70, apxShadow: true, apxExit: true,
+      // estilos de una linea: frases cortas de lineWords palabras
+      lineWords: 2,
+      // "Una linea" (tradicional): fuente de la edicion, blanco, espacios normales, entra con la animacion de la edicion
+      linFont: '', linSize: 64, linColor: '#ffffff', linKey: '#ffd400', linCenterY: 70, linShadow: true, linExit: false, linUpper: false,
+      // APPLEXBY: rojo, minusculas, letras y palabras muy juntas, contorno blanco y sombra suave; entra con desenfoque
+      apxFont: 'Archivo-Bold', apxSize: 64, apxColor: '#ff1a1a', apxKey: '#ff1a1a', apxCenterY: 70, apxShadow: true, apxExit: true,
+      apxLower: true, apxTrack: -60, apxGap: 14, apxStroke: true, apxStrokeColor: '#ffffff', apxStrokeW: 5, apxLook: 2,
       hideUnderT2: true
     };
   };
 
   // ---------- construccion ----------
-  M.HOST_VER = '0.6.0';
+  M.HOST_VER = '0.6.1';
   M.newId = function () { uid++; return uid; };
   // tras restaurar un estado guardado: evita ids repetidos
   M.reseed = function (st) {
@@ -57,9 +62,22 @@ var Model = (function () {
   };
 
   // entries: salida de ES.parseSRT -> estado con clases automaticas (reglas locales)
+  // Estilos de una linea ("Una linea", APPLEXBY): frases cortas de S.lineWords palabras y sin palabra clave automatica.
   M.fromEntries = function (entries, S) {
     S = S || M.defaults();
-    var raw = ES.groupSequences(entries, { gap: S.groupGap, maxWeight: S.groupWeight }), seqs = [], i, j;
+    var seqs = [], i, j;
+    if (ES.isLineStyle(S.editStyle)) {
+      var flat = [];
+      for (i = 0; i < entries.length; i++) { flat.push({ text: String(entries[i].text).replace(/^\s+|\s+$/g, ''), start: entries[i].start, end: entries[i].end }); }
+      var gs = M.shortGroups(flat, S);
+      for (i = 0; i < gs.length; i++) {
+        var w1 = [];
+        for (j = 0; j < gs[i].length; j++) { var c1 = ES.autoClassify([gs[i][j]])[0]; c1.size = 'M'; c1.brand = false; w1.push(M.makeWord(gs[i][j].text, gs[i][j].start, gs[i][j].end, c1)); }
+        seqs.push(M.makeSeq(w1));
+      }
+      return { seqs: seqs };
+    }
+    var raw = ES.groupSequences(entries, { gap: S.groupGap, maxWeight: S.groupWeight });
     for (i = 0; i < raw.length; i++) {
       var cl = ES.autoClassify(raw[i].words), ws = [];
       for (j = 0; j < raw[i].words.length; j++) {
@@ -70,6 +88,45 @@ var Model = (function () {
     }
     return { seqs: seqs };
   };
+  M.shortGroups = function (items, S) {
+    return ES.groupShort(items, { maxWords: S.lineWords || 2, gap: S.groupGap == null ? 0.4 : S.groupGap, maxChars: S.lineChars || 18 });
+  };
+
+  // Rearma las frases para el estilo de la edicion (al pasar de escalera/caja a una linea o al reves).
+  // Las palabras se conservan con sus ajustes (color, fuente, sonido...); se pierden los cortes y estilos por frase.
+  M.regroup = function (st, S) {
+    var line = ES.isLineStyle(S.editStyle), out = [], run = [], i, j;
+    function flush() {
+      if (!run.length) { return; }
+      run.sort(function (a, b) { return a.start - b.start; });
+      var groups;
+      if (line) {
+        groups = M.shortGroups(run, S);
+        for (var z = 0; z < run.length; z++) { run[z].c.brand = false; run[z].c.br = false; }
+      } else {
+        var raw = ES.groupSequences(run, { gap: S.groupGap, maxWeight: S.groupWeight }), k = 0, q;
+        groups = [];
+        for (q = 0; q < raw.length; q++) { var g = [], r; for (r = 0; r < raw[q].words.length; r++) { g.push(run[k++]); } groups.push(g); }
+      }
+      for (var gi = 0; gi < groups.length; gi++) {
+        var sq = M.makeSeq(groups[gi]);
+        if (!line) { var cl = ES.autoClassify(groups[gi]), w; for (w = 0; w < groups[gi].length; w++) { groups[gi][w].c.size = cl[w].size; groups[gi][w].c.brand = cl[w].brand === true; } }
+        out.push(sq);
+      }
+      run = [];
+    }
+    // las frases con plantilla (presentacion) se quedan como estan; se rearma lo que hay entre ellas
+    for (i = 0; i < st.seqs.length; i++) {
+      var s0 = st.seqs[i];
+      if (s0.pres) { flush(); out.push(s0); continue; }
+      for (j = 0; j < s0.words.length; j++) { run.push(s0.words[j]); }
+    }
+    flush();
+    st.seqs = out;
+    return out.length;
+  };
+  // familia de agrupado del estilo: 'line' (frases cortas) o 'block' (escalera / caja)
+  M.groupFamily = function (style) { return ES.isLineStyle(style) ? 'line' : 'block'; };
 
   // aplica tamanos/marca de reglas locales o de IA ([[{size,brand}]]) conservando efectos manuales
   M.applySizes = function (st, classes) {
@@ -423,8 +480,8 @@ var Model = (function () {
       glow: { colorHex: S.glowColor, size: S.glowSize, opacity: S.glowOpacity },
       anim: M.defaultAnim(S),
       karaoke: { size: S.karSize || 'M', boxColorHex: S.karBox || S.colHl, move: S.karMove == null ? 0.12 : S.karMove, radius: S.karRadius == null ? 14 : S.karRadius },
-      apx: { font: S.apxFont || '', size: S.apxSize || 64, colorHex: S.apxColor || '#f5f5f5', keyHex: S.apxKey || '#ff0101',
-             centerY: (S.apxCenterY == null ? 70 : S.apxCenterY) / 100, shadow: S.apxShadow !== false, exit: S.apxExit !== false }
+      line: M.lineLook(S, 'line'),
+      apx: M.lineLook(S, 'applexby')
     };
     var replace = { mode: S.replacePrev === false ? 'none' : (o.only && o.only.length ? 'ranges' : 'all'), ranges: [] };
     if (replace.mode === 'ranges') {
@@ -441,6 +498,34 @@ var Model = (function () {
     }
     cfg.hide = ES.mergeIntervals(hide);
     return { cfg: cfg, seqs: seqs, sfx: sfx, pres: presOut, replace: replace };
+  };
+
+  // Aspecto de los estilos de una linea (lo usan la vista previa y After Effects).
+  //   gap = espacio entre palabras (fraccion del tamano)  track = tracking de AE (milesimas de em)
+  //   caps = 'lower' | 'upper' | 'none'   anim = id de ES.TRANS ('' = la animacion de la edicion)
+  M.lineLook = function (S, style) {
+    var d = M.defaults();
+    function v(k) { return S[k] == null ? d[k] : S[k]; }
+    if (style === 'applexby') {
+      return { style: 'applexby', font: v('apxFont') || '', size: v('apxSize'), colorHex: v('apxColor'), keyHex: v('apxKey'),
+        centerY: v('apxCenterY') / 100, shadow: v('apxShadow') !== false, exit: v('apxExit') !== false,
+        caps: v('apxLower') ? 'lower' : 'none', track: v('apxTrack'), gap: v('apxGap') / 100,
+        stroke: v('apxStroke') ? { colorHex: v('apxStrokeColor'), width: v('apxStrokeW') } : null,
+        shadowLook: { opacity: 35, distance: 6, softness: 12 }, anim: 'blurIn' };
+    }
+    return { style: 'line', font: v('linFont') || '', size: v('linSize'), colorHex: v('linColor'), keyHex: v('linKey'),
+      centerY: v('linCenterY') / 100, shadow: v('linShadow') !== false, exit: v('linExit') === true,
+      caps: v('linUpper') ? 'upper' : 'none', track: 0, gap: 0.28, stroke: null,
+      shadowLook: { opacity: 60, distance: 4, softness: 16 }, anim: '' };
+  };
+  // ajustes guardados de antes del nuevo aspecto APPLEXBY (0.6.0: blanco con clave roja) -> nuevo aspecto
+  M.migrateCfg = function (S) {
+    if (S.apxLook !== 2) {
+      var d = M.defaults(), k;
+      for (k in d) { if (d.hasOwnProperty(k) && /^apx/.test(k) && k !== 'apxFont' && k !== 'apxSize' && k !== 'apxCenterY') { S[k] = d[k]; } }
+      S.apxLook = 2;
+    }
+    return S;
   };
 
   // ---------- guardar / importar edicion ----------

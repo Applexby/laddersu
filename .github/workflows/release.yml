@@ -12,6 +12,8 @@ on:
     paths:
       - extension/version.json
       - .github/workflows/release.yml
+      - app/**
+      - installer/**
   workflow_dispatch:
 
 permissions:
@@ -60,6 +62,20 @@ jobs:
           $v = "${{ steps.ver.outputs.version }}"
           New-Item -ItemType Directory -Force out | Out-Null
           Compress-Archive -Path extension\* -DestinationPath "out\laddersu-panel-$v.zip" -Force
+
+      - name: App de escritorio Laddersu.exe (pruebas + compilacion)
+        if: steps.ver.outputs.skip != '1'
+        shell: pwsh
+        run: |
+          $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+          New-Item -ItemType Directory -Force out\app | Out-Null
+          & $csc /nologo /codepage:65001 /target:exe /out:out\app\LogicTest.exe /r:System.Web.Extensions.dll app\Logic.cs app\LogicTest.cs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $env:LADDERSU_ONLINE = "1"
+          & out\app\LogicTest.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          & $csc /nologo /codepage:65001 /target:winexe /out:out\app\Laddersu.exe /win32icon:installer\laddersu.ico /win32manifest:app\app.manifest /r:System.Web.Extensions.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll app\App.cs app\Logic.cs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Instalador (.exe)
         if: steps.ver.outputs.skip != '1'

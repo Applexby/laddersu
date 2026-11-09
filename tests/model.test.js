@@ -193,7 +193,7 @@ console.log(n + ' pruebas de modelo OK');
 })();
 (function () {
   var S = M.defaults(), st = mk();
-  assert.strictEqual(S.apxFont, 'Archivo-Bold'); assert.strictEqual(S.apxKey, '#ff0101');
+  assert.strictEqual(S.apxFont, 'Archivo-Bold'); assert.strictEqual(S.apxColor, '#ff1a1a');
   st.seqs[0].style = 'applexby';
   st.seqs[1].pres = 't2';
   var job = M.buildJob(st, S, { presDefs: { t2: { id: 't2', kind: 'T2', layers: [] } }, assign: function () { return []; }, hide: [[50, 52]] });
@@ -204,4 +204,59 @@ console.log(n + ' pruebas de modelo OK');
   S.hideUnderT2 = false;
   assert.strictEqual(M.buildJob(st, S, { presDefs: { t2: { kind: 'T2', layers: [] } }, hide: [[50, 52]] }).cfg.hide.length, 0);
   console.log('estilo APPLEXBY y ocultar durante T2 en el modelo OK');
+})();
+
+(function () {
+  // aspecto de los estilos de una linea
+  var S = M.defaults();
+  var a = M.lineLook(S, 'applexby'), l = M.lineLook(S, 'line');
+  assert.strictEqual(a.caps, 'lower'); assert.strictEqual(a.track, -60); assert(a.gap < 0.2, 'palabras juntas');
+  assert.deepStrictEqual(a.stroke, { colorHex: '#ffffff', width: 5 }); assert.strictEqual(a.anim, 'blurIn');
+  assert.strictEqual(l.track, 0); assert.strictEqual(l.gap, 0.28); assert.strictEqual(l.stroke, null); assert.strictEqual(l.anim, '');
+  S.apxStroke = false; assert.strictEqual(M.lineLook(S, 'applexby').stroke, null);
+  var job = M.buildJob(mk(), M.defaults(), {}); assert(job.cfg.line && job.cfg.apx);
+  // ajustes viejos (0.6.0, blanco con clave roja) pasan al nuevo aspecto; tamano y fuente se respetan
+  var old = M.defaults(); delete old.apxLook; old.apxColor = '#f5f5f5'; old.apxKey = '#ff0101'; old.apxSize = 80; delete old.apxTrack;
+  M.migrateCfg(old);
+  assert.strictEqual(old.apxColor, '#ff1a1a'); assert.strictEqual(old.apxTrack, -60); assert.strictEqual(old.apxSize, 80); assert.strictEqual(old.apxLook, 2);
+  old.apxColor = '#00ff00'; M.migrateCfg(old); assert.strictEqual(old.apxColor, '#00ff00', 'solo una vez');
+  console.log('aspecto Una linea / APPLEXBY y migracion OK');
+})();
+(function () {
+  // frases cortas al importar con un estilo de una linea, y reagrupar al cambiar de estilo
+  var srt = require('fs').readFileSync(__dirname + '/sample.srt', 'utf8'), E = ES.parseSRT(srt);
+  var S = M.defaults(); S.editStyle = 'applexby';
+  var st = M.fromEntries(E, S), total = 0;
+  st.seqs.forEach(function (q) { total += q.words.length; assert(q.words.length <= 4, 'frase corta: ' + q.words.map(function (w) { return w.text; }).join(' '));
+    q.words.forEach(function (w) { assert.strictEqual(w.c.brand, false); }); });
+  assert.strictEqual(total, E.length);
+  var block = M.fromEntries(E, M.defaults());
+  assert(st.seqs.length > block.seqs.length, 'mas frases (' + st.seqs.length + ' vs ' + block.seqs.length + ')');
+  // reagrupar conserva las palabras (ids y ajustes)
+  var id = block.seqs[0].words[0].id; block.seqs[0].words[0].c.color = '#123456';
+  var S2 = M.defaults(); S2.editStyle = 'line'; M.regroup(block, S2);
+  assert.strictEqual(block.seqs.length, st.seqs.length);
+  var w0 = M.find(block, id); assert(w0, 'la palabra sigue'); 
+  var all = []; block.seqs.forEach(function (q) { q.words.forEach(function (w) { all.push(w); }); });
+  assert.strictEqual(all[0].c.color, '#123456');
+  // y de vuelta a escalera
+  S2.editStyle = 'lockup'; M.regroup(block, S2);
+  assert.strictEqual(block.seqs.length, M.fromEntries(E, M.defaults()).seqs.length);
+  assert.strictEqual(M.groupFamily('applexby'), 'line'); assert.strictEqual(M.groupFamily('karaoke'), 'block');
+  // 1 palabra por frase
+  S.lineWords = 1; var one = M.fromEntries(E, S);
+  one.seqs.forEach(function (q) { assert(q.words.length <= 3); });
+  console.log('frases cortas para una linea y reagrupar OK');
+})();
+(function () {
+  var E = ES.parseSRT(require('fs').readFileSync(__dirname + '/sample.srt', 'utf8'));
+  var st = M.fromEntries(E, M.defaults()); st.seqs[1].pres = 'builtin:caja';
+  var keep = st.seqs[1], n = 0; st.seqs.forEach(function (q) { n += q.words.length; });
+  var S = M.defaults(); S.editStyle = 'applexby'; M.regroup(st, S);
+  assert(st.seqs.indexOf(keep) >= 0, 'la frase con plantilla se conserva');
+  var m = 0; st.seqs.forEach(function (q) { m += q.words.length; }); assert.strictEqual(m, n);
+  for (var i = 1; i < st.seqs.length; i++) { assert(st.seqs[i].start >= st.seqs[i - 1].start, 'en orden'); }
+  S.lineWords = 1; var a = M.regroup(st, S); S.lineWords = 2; var b = M.regroup(st, S);
+  assert(a >= b, '1 palabra por frase no da menos frases (' + a + ' vs ' + b + ')');
+  console.log('reagrupar conserva las plantillas OK');
 })();

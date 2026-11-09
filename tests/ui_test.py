@@ -8,7 +8,7 @@ SRT = open(os.path.join(ROOT, 'tests', 'sample.srt'), encoding='utf-8').read()
 
 MOCK = r"""
 window.__calls = [];
-window.__lib = [];
+window.__lib = []; window.__groups = [];
 window.__stepDelay = 0;
 window.__capture = {ok:true, skipped:1, def:{comp:{w:1080,h:1920}, upper:true, layers:[
   {k:'text',name:'Titulo',dt:0,dur:null,tr:[{t:'p',m:'ADBE Position',v:[540,1100]}],fx:[],an:[],doc:{font:'',size:90,color:'#ffffff',just:'C',tracking:0},ac:[0,0],sample:'Hola'},
@@ -24,7 +24,7 @@ window.__adobe_cep__ = {
   getSystemPath: function(t){ return t==='extension' ? 'file:///C:/ext' : 'file:///C:/ud'; },
   evalScript: function(s, cb){
     var r = '', delay = 0;
-    if (s.indexOf('ES_status')>=0) r = '{"engine":true,"fonts":true,"ver":"0.6.0","ev":"0.6.0","ae":"24.0"}';
+    if (s.indexOf('ES_status')>=0) r = '{"engine":true,"fonts":true,"ver":"0.6.1","ev":"0.6.1","ae":"24.0"}';
     else if (s.indexOf('ES_compInfo')>=0) r = '{"ok":true,"name":"Reel","w":1080,"h":1920,"fps":30,"dur":60}';
     else if (s.indexOf('ES_listFonts')>=0) r = JSON.stringify({ok:true,fonts:[{n:'Arial-BoldMT',f:'Arial',s:'Bold'},{n:'Anton-Regular',f:'Anton',s:'Regular'},{n:'Montserrat-ExtraBold',f:'Montserrat',s:'ExtraBold'}]});
     else if (s.indexOf('ES_capture')>=0) r = JSON.stringify(window.__capture);
@@ -32,13 +32,15 @@ window.__adobe_cep__ = {
     else if (s.indexOf('ES_step')>=0) { window.__calls.push(s); r = '{"ok":true,"layers":3,"sfx":0}'; delay = window.__stepDelay; }
     else if (s.indexOf('ES_end')>=0) { window.__calls.push(s); r = '{"ok":true,"layers":12,"msg":"Listo: 12 capas en \\"Reel\\"."}'; }
     else if (s.indexOf('ES_stop')>=0) { window.__calls.push(s); r = '{"ok":true,"removed":5,"seqs":1}'; }
-    else if (s.indexOf('ES_libList')>=0) r = JSON.stringify({ok:true, root:'C:/ud/Laddersu/biblioteca', items: window.__lib});
+    else if (s.indexOf('ES_libList')>=0) r = JSON.stringify({ok:true, root:'C:/ud/Laddersu/biblioteca', items: window.__lib, groups: window.__groups});
     else if (s.indexOf('ES_libState')>=0) r = JSON.stringify({ok:true, hasComp:true, comp:'Reel', sel:2, saved:true, dirty:true, project:'proyecto.aep'});
-    else if (s.indexOf('ES_libSave')>=0) { var o = JSON.parse(argOf(s)); window.__calls.push(s); window.__lib.push({id:'c'+window.__lib.length, name:o.name, comp:o.name, w:1080, h:1920, dur:4, fps:30, files:2, created:Date.now(), thumb:''}); r = JSON.stringify({ok:true, id:'c1', name:o.name, files:2}); }
+    else if (s.indexOf('ES_libSave')>=0) { var o = JSON.parse(argOf(s)); window.__calls.push(s); window.__lib.push({id:'c'+window.__lib.length, name:o.name, comp:o.name, w:1080, h:1920, dur:4, fps:30, files:2, created:Date.now(), thumb:'', group:o.group||''}); r = JSON.stringify({ok:true, id:'c1', name:o.name, files:2}); }
     else if (s.indexOf('ES_libInsert')>=0) { window.__calls.push(s); r = '{"ok":true,"msg":"Insertado en \\"Reel\\"."}'; }
     else if (s.indexOf('ES_libDelete')>=0) { var id = argOf(s); window.__lib = window.__lib.filter(function(x){return x.id!==id;}); r = '{"ok":true}'; }
     else if (s.indexOf('ES_libRename')>=0) { var o2 = JSON.parse(argOf(s)); window.__lib.forEach(function(x){ if (x.id===o2.id) x.name=o2.name; }); r = '{"ok":true}'; }
     else if (s.indexOf('ES_libReveal')>=0) r = '{"ok":true}';
+    else if (s.indexOf('ES_libGroupsSave')>=0) { var og = JSON.parse(argOf(s)); window.__groups = og.groups; var keep = {}, mv = 0; og.groups.forEach(function(g){ keep[g.id]=1; }); window.__lib.forEach(function(x){ if (x.group && !keep[x.group]) { x.group=''; mv++; } }); r = JSON.stringify({ok:true, moved:mv}); }
+    else if (s.indexOf('ES_libSetGroup')>=0) { var os = JSON.parse(argOf(s)); window.__lib.forEach(function(x){ if (os.ids.indexOf(x.id)>=0) x.group = os.group; }); r = '{"ok":true}'; }
     setTimeout(function(){ cb(r); }, delay);
   }
 };
@@ -216,15 +218,13 @@ with sync_playwright() as p:
     page.evaluate("window.__ES.showUpdate('9.9.9')")
     check(page.locator('#updBar').is_visible() and '9.9.9' in page.locator('#updBar').inner_text(), 'aviso de version nueva en el panel')
     page.screenshot(path=SHOTS + '/30_aviso_actualizacion.png')
+    page.evaluate("window.__openedUrls = []; window.open = function (u) { window.__openedUrls.push(u); }; 0")
     page.locator('#updBar .pill', has_text='Actualizar').click()
-    check(page.evaluate('window.__opened') == ['com.idealo.laddersu.updater'], 'Actualizar abre el panel de actualizaciones')
+    check(page.evaluate('window.__opened') == [] and 'Laddersu-Setup.exe' in ''.join(page.evaluate('window.__openedUrls')), 'sin la app de escritorio, Actualizar descarga el instalador (ya no hay panel de actualizaciones)')
     page.locator('#updBar .iconBtn').click()
     check(not page.locator('#updBar').is_visible(), 'el aviso se puede ocultar')
     page.evaluate("window.__ES.showUpdate('9.9.9')")
     check(not page.locator('#updBar').is_visible(), 'una version ocultada no vuelve a avisar')
-    page.evaluate("window.__bus['com.idealo.laddersu.updated']({data: JSON.stringify({kind:'installed', version:'9.9.9'})})")
-    check('instalada' in page.locator('#updBar').inner_text() and page.locator('#updBar .pill', has_text='Recargar').count() == 1, 'tras instalar ofrece recargar el panel')
-    page.locator('#updBar .iconBtn').click()
 
     # --- editar texto ---
     chip(page, 1).dblclick()
@@ -342,7 +342,37 @@ with sync_playwright() as p:
     ins = [c for c in page.evaluate('window.__calls') if c.startswith('ES_libInsert')][-1]
     check('"open"' in ins.replace('\\"', '"'), 'abrir para editar')
     page.screenshot(path=SHOTS + '/20_biblioteca_comp.png')
-    page.locator('.ccard button[title="Borrar"]').click(); page.locator('.ccard button[title="Pulsa otra vez para borrar"]').click(); page.wait_for_timeout(150)
+    # grupos
+    page.locator('#grpBar .opt.add').click()
+    page.fill('#grpBar .grpIn', 'Idealo'); page.keyboard.press('Enter'); page.wait_for_timeout(150)
+    check(page.evaluate('window.__groups.length') == 1 and page.locator('#grpBar .opt.grp.on', has_text='Idealo').count() == 1, 'crear un grupo (queda seleccionado)')
+    check(page.locator('.ccard').count() == 0 and 'vacío' in page.locator('#compGrid').inner_text(), 'grupo nuevo vacio con explicacion')
+    page.locator('#grpBar .opt.grp', has_text='Todas').click()
+    page.locator('.ccard .grpBtn').click(); page.wait_for_timeout(100)
+    check(page.locator('#grpPop').is_visible(), 'menu mover a grupo')
+    page.locator('#grpPop .it', has_text='Idealo').click(); page.wait_for_timeout(150)
+    check(page.evaluate('window.__lib[0].group') == page.evaluate('window.__groups[0].id'), 'composicion movida al grupo')
+    check(page.locator('.grpHead', has_text='Idealo').count() == 1, 'Todas muestra las composiciones por grupo')
+    page.locator('#grpBar .opt.add').click()
+    page.fill('#grpBar .grpIn', 'APPLEXBY'); page.keyboard.press('Enter'); page.wait_for_timeout(150)
+    page.click('#btnSaveComp'); page.wait_for_timeout(150)
+    check(page.locator('#compGroup').input_value() == page.evaluate('window.__groups[1].id'), 'guardar propone el grupo abierto')
+    page.locator('.choiceBtn', has_text='Composición activa').click()
+    page.fill('#compName', 'Intro APX'); page.click('#compSaveOk'); page.wait_for_timeout(300)
+    check(page.evaluate("window.__lib.filter(function(x){return x.name==='Intro APX';})[0].group") == page.evaluate('window.__groups[1].id'), 'guardar directo en un grupo')
+    check(page.locator('.ccard').count() == 1 and 'Intro APX' in page.locator('.ccard').inner_text(), 'el grupo muestra solo lo suyo')
+    page.locator('#grpBar .opt.grp', has_text='Todas').click(); page.wait_for_timeout(100)
+    page.screenshot(path=SHOTS + '/31_biblioteca_grupos.png')
+    page.locator('#grpBar .opt.grp', has_text='Idealo').click()
+    page.locator('#grpBar .grpTools button[title="Renombrar el grupo"]').click()
+    page.fill('#grpBar .grpIn', 'Idealo Films'); page.keyboard.press('Enter'); page.wait_for_timeout(150)
+    check(page.evaluate('window.__groups[0].name') == 'Idealo Films', 'renombrar grupo')
+    page.locator('#grpBar .grpTools button[title="Borrar el grupo"]').click(); page.locator('#grpBar .grpTools .danger').click(); page.wait_for_timeout(150)
+    check(page.evaluate('window.__groups.length') == 1 and page.evaluate("window.__lib.filter(function(x){return x.name==='Promo motos';})[0].group") == '', 'borrar grupo: sus composiciones pasan a Sin grupo')
+    check(page.locator('#grpBar .opt.grp', has_text='Sin grupo').count() == 1, 'aparece Sin grupo')
+    page.locator('#grpBar .opt.grp', has_text='Todas').click()
+    while page.locator('.ccard').count():
+        page.locator('.ccard button[title="Borrar"]').first.click(); page.locator('.ccard button[title="Pulsa otra vez para borrar"]').first.click(); page.wait_for_timeout(150)
     check(page.locator('.ccard').count() == 0, 'borrar de la biblioteca (doble clic)')
 
     # --- plantillas de texto ---
@@ -370,16 +400,39 @@ with sync_playwright() as p:
 
     # --- ajustes rediseñados ---
     page.click('#btnSettings'); page.wait_for_timeout(250)
-    check(page.locator('.styleBtn').count() == 3, 'ajustes: eleccion visual del estilo de edicion (3 estilos)')
+    check(page.locator('.styleBtn').count() == 4, 'ajustes: eleccion visual del estilo de edicion (4 estilos)')
+    n_block = page.evaluate('window.__ES.st.seqs.length')
     page.locator('.styleBtn', has_text='Caja que recorre').click()
     check(page.evaluate('window.__ES.S.editStyle') == 'karaoke' and page.locator('#f_karBox').count() == 1, 'estilo global caja + sus opciones')
     page.screenshot(path=SHOTS + '/24_ajustes_estilo.png')
     page.locator('.styleBtn', has_text='APPLEXBY').click()
     check(page.evaluate('window.__ES.S.editStyle') == 'applexby' and page.locator('#f_apxFont').count() == 1 and page.locator('#f_apxSize').count() == 1, 'estilo global APPLEXBY + sus opciones')
+    n_line = page.evaluate('window.__ES.st.seqs.length')
+    check(n_line > n_block and page.evaluate('Math.max.apply(null, window.__ES.st.seqs.map(function(q){return q.words.length;}))') <= 4, 'al pasar a APPLEXBY las frases se rearman cortas (%d -> %d)' % (n_block, n_line))
+    check(page.locator('#toast button', has_text='Deshacer').count() == 1, 'rearmar frases se puede deshacer')
+    check(page.locator('#f_apxTrack').count() == 1 and page.locator('#f_apxGap').count() == 1 and page.locator('#f_apxStroke').count() == 1 and page.locator('#f_lineWords').count() == 1, 'APPLEXBY: juntar letras, espacio, contorno y palabras por frase')
+    page.locator('#f_lineWords button[data-v="1"]').click(); page.wait_for_timeout(100)
+    check(page.evaluate('window.__ES.S.lineWords') == 1 and page.evaluate('Math.max.apply(null, window.__ES.st.seqs.map(function(q){return q.words.length;}))') <= 3, '1 palabra por frase rearma')
+    page.locator('#f_lineWords button[data-v="2"]').click(); page.wait_for_timeout(100)
+    check(page.evaluate('window.__ES.st.seqs.length') == n_line, 'vuelve a 2 palabras')
+    page.locator('.styleBtn', has_text='Una línea').click()
+    check(page.evaluate('window.__ES.S.editStyle') == 'line' and page.locator('#f_linSize').count() == 1 and page.evaluate('window.__ES.st.seqs.length') == n_line, 'Una linea: sus opciones y sin rearmar (misma familia)')
+    page.screenshot(path=SHOTS + '/32_ajustes_una_linea.png')
+    page.locator('.styleBtn', has_text='APPLEXBY').click()
     check(page.locator('#f_apxFont').input_value() == 'Archivo-Bold', 'fuente por defecto Archivo Bold')
     check('No está instalada' in page.locator('.fontWarn').inner_text(), 'avisa si Archivo no esta instalada')
     page.screenshot(path=SHOTS + '/27_ajustes_applexby.png')
+    page.click('#btnCloseSettings'); page.wait_for_timeout(150)
+    page.evaluate("document.getElementById('tab-editor').scrollTop = 0")
+    chip(page, 1).click(); page.wait_for_timeout(100)
+    page.locator('#monitor').screenshot(path=SHOTS + '/33_applexby_nuevo.png')
+    page.screenshot(path=SHOTS + '/34_editor_frases_cortas.png')
+    page.click('#monPlay'); page.wait_for_timeout(500)
+    page.locator('#monitor').screenshot(path=SHOTS + '/35_applexby_nuevo_play.png')
+    page.wait_for_timeout(1500)
+    page.click('#btnSettings'); page.wait_for_timeout(250)
     page.locator('.styleBtn', has_text='Escalera').click()
+    check(page.evaluate('window.__ES.st.seqs.length') < n_line, 'de vuelta a Escalera: frases largas otra vez')
     top0 = page.evaluate("document.querySelector('.phone .zone').style.top")
     page.evaluate("const r=document.getElementById('f_zoneTop'); r.value=40; r.dispatchEvent(new Event('input')); r.dispatchEvent(new Event('change'));")
     check(page.evaluate("document.querySelector('.phone .zone').style.top") == '40%' and top0 != '40%', 'el diagrama de margenes se mueve con el control')

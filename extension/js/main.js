@@ -73,7 +73,7 @@
   function saveCfg() { lsSet('escaleraSubs3', { S: S }); }
   function loadCfg() {
     var o = lsGet('escaleraSubs3', null), k;
-    if (o && o.S) { for (k in o.S) { if (o.S.hasOwnProperty(k)) { S[k] = o.S[k]; } } }
+    if (o && o.S) { for (k in o.S) { if (o.S.hasOwnProperty(k)) { S[k] = o.S[k]; } } Model.migrateCfg(S); }
   }
   function getF(f) { return f.k === 'autoSfx' ? S.sfxAuto.sfx : (f.k === 'autoOn' ? S.sfxAuto.on : S[f.k]); }
   function setF(f, v) { if (f.k === 'autoSfx') { S.sfxAuto.sfx = v; } else if (f.k === 'autoOn') { S.sfxAuto.on = v; } else { S[f.k] = v; } saveCfg(); drawPreview(); }
@@ -148,16 +148,18 @@
   function afterSet(k) {
     if (/^(marginX|zoneTop|zoneBottom|centerY)$/.test(k) && zoneDiagram.cur) { zoneDiagram.cur.paint(); }
   }
-  function apxFontIn() {
-    var w = h('span', 'fontIn'), i = h('input'); i.type = 'text'; i.value = S.apxFont || ''; i.id = 'f_apxFont'; i.setAttribute('list', 'fontNames');
+  function apxFontIn(k, ph) {
+    k = k || 'apxFont';
+    var w = h('span', 'fontIn'), i = h('input'); i.type = 'text'; i.value = S[k] || ''; i.id = 'f_' + k; i.setAttribute('list', 'fontNames');
+    if (ph) { i.placeholder = ph; }
     var dl = h('datalist'); dl.id = 'fontNames';
     fonts.forEach(function (f) { var o = h('option'); o.value = f.n; o.label = f.f + ' ' + f.s; dl.appendChild(o); });
     var warn = h('small', 'fontWarn');
     var check = function () {
-      var ok = !fonts.length || !S.apxFont || !!Model.findFont(fonts, S.apxFont);
+      var ok = !fonts.length || !S[k] || !!Model.findFont(fonts, S[k]);
       warn.textContent = ok ? '' : 'No está instalada: se usará la fuente por defecto.';
     };
-    i.addEventListener('change', function () { S.apxFont = i.value.replace(/^\s+|\s+$/g, ''); saveCfg(); check(); drawPreview(); });
+    i.addEventListener('change', function () { S[k] = i.value.replace(/^\s+|\s+$/g, ''); saveCfg(); check(); drawPreview(); });
     check(); w.appendChild(i); w.appendChild(dl); w.appendChild(warn);
     return w;
   }
@@ -167,12 +169,30 @@
     if (kind === 'lockup') {
       [['s', 'w30', 'x6'], ['l', 'w58', 'x20'], ['m', 'w40', 'x40']].forEach(function (b) { a.appendChild(h('i', b.join(' '))); });
     } else if (kind === 'applexby') {
-      [['m', 'w18', 'x14', 'y3'], ['m', 'w24', 'x36', 'y3'], ['m red', 'w22', 'x64', 'y3']].forEach(function (b) { a.appendChild(h('i', b.join(' '))); });
+      [['m red', 'w10', 'x26', 'y3'], ['m red', 'w44', 'x37', 'y3']].forEach(function (b) { a.appendChild(h('i', b.join(' '))); });
+    } else if (kind === 'line') {
+      [['m', 'w24', 'x20', 'y3'], ['m', 'w30', 'x50', 'y3']].forEach(function (b) { a.appendChild(h('i', b.join(' '))); });
     } else {
       a.appendChild(h('span', 'kbox'));
       [['m', 'w22', 'x8', 'y1'], ['m', 'w26', 'x36', 'y1'], ['m', 'w20', 'x68', 'y1'], ['m', 'w30', 'x16', 'y2'], ['m', 'w34', 'x52', 'y2']].forEach(function (b) { a.appendChild(h('i', b.join(' '))); });
     }
     return a;
+  }
+
+  // cambiar el estilo de la edicion: si pasa de bloque (escalera/caja) a una linea o al reves, se rearman las frases
+  function setEditStyle(style) {
+    var f0 = Model.groupFamily(S.editStyle), f1 = Model.groupFamily(style);
+    S.editStyle = style; saveCfg();
+    if (f0 !== f1 && st.seqs.length) {
+      mutate(function () { Model.regroup(st, S); });
+      say((f1 === 'line' ? 'Frases cortas para una línea: ' : 'Frases rearmadas: ') + st.seqs.length + ' frases.', 'ok');
+    } else { render(); }
+    renderSettings();
+  }
+  function regroupLines() {
+    if (!ES.isLineStyle(S.editStyle) || !st.seqs.length) { return; }
+    mutate(function () { Model.regroup(st, S); });
+    say('Frases de ' + S.lineWords + (S.lineWords === 1 ? ' palabra: ' : ' palabras: ') + st.seqs.length + ' frases.', 'ok');
   }
 
   function renderSettings() {
@@ -182,23 +202,41 @@
     c = card('stair', 'Estilo de la edición', 'Cómo se arma cada frase. Cada frase puede cambiarlo con clic derecho ▸ Estilo de la frase.');
     row = h('div', 'styleChoice');
     [['lockup', 'Escalera', 'Bloque con tamaños, ★ y patrones'], ['karaoke', 'Caja que recorre', 'Frase entera y una caja que pasa de palabra en palabra'],
-     ['applexby', 'APPLEXBY', 'Una línea abajo, palabra por palabra con desenfoque']].forEach(function (o) {
+     ['line', 'Una línea', 'Frases cortas en una línea, con la animación de la edición'],
+     ['applexby', 'APPLEXBY', 'Frases cortas, letras juntas en rojo con contorno, entran con desenfoque']].forEach(function (o) {
       var b = h('button', 'styleBtn' + (S.editStyle === o[0] ? ' on' : '')); b.type = 'button'; b.setAttribute('aria-pressed', S.editStyle === o[0] ? 'true' : 'false');
       b.appendChild(styleArt(o[0])); b.appendChild(h('b', '', o[1])); b.appendChild(h('small', '', o[2]));
-      b.addEventListener('click', function () { S.editStyle = o[0]; saveCfg(); renderSettings(); render(); });
+      b.addEventListener('click', function () { setEditStyle(o[0]); });
       row.appendChild(b);
     });
     c.appendChild(row);
-    if (S.editStyle === 'applexby') {
-      c.appendChild(fld('Fuente (nombre PostScript)', apxFontIn()));
-      c.appendChild(fld('Tamaño', slider('apxSize', 30, 120, 1, ' px')));
-      c.appendChild(fld('Altura en el video', slider('apxCenterY', 50, 90, 1, '%')));
+    if (S.editStyle === 'applexby' || S.editStyle === 'line') {
+      var ax = S.editStyle === 'applexby', P = ax ? 'apx' : 'lin';
+      c.appendChild(fld('Palabras por frase', segc('lineWords', [[1, '1'], [2, '2'], [3, '3']], regroupLines), 'Al cambiarlo se rearman las frases (con Deshacer).'));
+      c.appendChild(fld('Fuente (nombre PostScript)', apxFontIn(P + 'Font', ax ? '' : 'La de la edición')));
+      c.appendChild(fld('Tamaño', slider(P + 'Size', 30, 140, 1, ' px')));
+      c.appendChild(fld('Altura en el video', slider(P + 'CenterY', 50, 90, 1, '%')));
+      if (ax) {
+        c.appendChild(fld('Juntar letras', slider('apxTrack', -150, 0, 5, '')));
+        c.appendChild(fld('Espacio entre palabras', slider('apxGap', 0, 30, 1, '%')));
+      }
       row = h('div', 'colors two');
-      [['apxColor', 'Texto'], ['apxKey', 'Palabra clave ★']].forEach(function (x) { var cell = h('label', 'ccell'); cell.appendChild(colorIn(x[0])); cell.appendChild(h('small', '', x[1])); row.appendChild(cell); });
+      [[P + 'Color', 'Texto'], [P + 'Key', 'Palabra clave ★']].forEach(function (x) { var cell = h('label', 'ccell'); cell.appendChild(colorIn(x[0])); cell.appendChild(h('small', '', x[1])); row.appendChild(cell); });
       c.appendChild(row);
-      c.appendChild(fld('Sombra suave', toggle('apxShadow')));
-      c.appendChild(fld('Salida con desenfoque al terminar la frase', toggle('apxExit')));
-      c.appendChild(h('p', 'secNote', 'Entra palabra por palabra con desenfoque (0,30 s). Si no cabe en una línea se parte en dos, nunca en tres.'));
+      if (ax) {
+        c.appendChild(fld('Minúsculas', toggle('apxLower')));
+        c.appendChild(fld('Contorno', toggle('apxStroke', null, function (v) { S.apxStroke = v; setTimeout(renderSettings, 0); })));
+        if (S.apxStroke) {
+          c.appendChild(fld('Color del contorno', colorIn('apxStrokeColor')));
+          c.appendChild(fld('Grosor del contorno', slider('apxStrokeW', 1, 16, 0.5, ' px')));
+        }
+      } else {
+        c.appendChild(fld('Mayúsculas', toggle('linUpper')));
+      }
+      c.appendChild(fld('Sombra suave', toggle(P + 'Shadow')));
+      c.appendChild(fld(ax ? 'Salida con desenfoque al terminar la frase' : 'Salida al terminar la frase', toggle(P + 'Exit')));
+      c.appendChild(h('p', 'secNote', ax ? 'Cada palabra entra con desenfoque (0,30 s). Si una frase no cabe en una línea se parte en dos, nunca en tres.'
+        : 'Cada palabra entra con la animación de la edición (Ajustes ▸ Animación). Si no cabe en una línea se parte en dos, nunca en tres.'));
     } else if (S.editStyle === 'karaoke') {
       c.appendChild(fld('Tamaño de las palabras', segc('karSize', [['S', 'S'], ['M', 'M'], ['L', 'L']])));
       c.appendChild(fld('Color de la caja', colorIn('karBox')));
@@ -592,7 +630,7 @@
   }
 
   // ================= biblioteca de composiciones =================
-  var lib = { items: [], root: '', loaded: false, mode: 'comp', state: null };
+  var lib = { items: [], groups: [], root: '', loaded: false, mode: 'comp', state: null, group: '*' };
   function fileUrl(p) { return encodeURI('file:///' + String(p).replace(/\\/g, '/').replace(/^\/+/, '')) + '?v=' + Date.now(); }
   function fmtDur(d) { return (Math.round(d * 10) / 10).toString().replace('.', ',') + ' s'; }
   function loadLib() {
@@ -601,7 +639,10 @@
       if (!ok) { renderComps(); return; }
       evalAE('ES_libList()', function (r) {
         var o = parseJSON(r);
-        if (o && o.ok) { lib.items = o.items.sort(function (a, b) { return b.created - a.created; }); lib.root = o.root; }
+        if (o && o.ok) {
+          lib.items = o.items.sort(function (a, b) { return b.created - a.created; }); lib.root = o.root; lib.groups = o.groups || [];
+          if (lib.group !== '*' && lib.group !== '' && !groupById(lib.group)) { lib.group = '*'; }
+        }
         lib.loaded = true; renderComps();
       });
     });
@@ -612,22 +653,115 @@
       evalAE(fn + '(' + (arg === undefined ? '' : JSON.stringify(arg)) + ')', function (r) { var o = parseJSON(r); cb(o || { ok: false, msg: 'Respuesta inesperada: ' + r }); });
     });
   }
-  function renderComps() {
-    var g = $('compGrid'), q = ($('libSearch').value || '').toLowerCase(); g.innerHTML = '';
-    if (!hasAE()) { g.appendChild(h('p', 'hint', 'Abre este panel dentro de After Effects para usar la biblioteca.')); return; }
-    var list = lib.items.filter(function (it) { return !q || String(it.name).toLowerCase().indexOf(q) >= 0; });
-    $('libSearch').hidden = lib.items.length < 4;
-    if (!lib.items.length) {
-      var e = h('div', 'libEmpty');
-      e.appendChild(icon('comp'));
-      e.appendChild(h('b', '', 'Tu biblioteca está vacía'));
-      e.appendChild(h('span', '', 'Abre una composición (o selecciona capas) y pulsa “Guardar composición”. Se guarda con sus precomposiciones y archivos, y la puedes insertar en cualquier proyecto.'));
-      g.appendChild(e); return;
+  // ---------- grupos (Idealo, APPLEXBY...) ----------
+  function groupById(id) { var i; for (i = 0; i < lib.groups.length; i++) { if (lib.groups[i].id === id) { return lib.groups[i]; } } return null; }
+  function groupOf(it) { return it.group && groupById(it.group) ? it.group : ''; }
+  function saveGroups(cb) {
+    libCall('ES_libGroupsSave', JSON.stringify({ groups: lib.groups }), function (o) {
+      if (!o.ok) { say(o.msg, 'err', 'msgLib'); return; }
+      if (o.moved) { lib.items.forEach(function (it) { if (it.group && !groupById(it.group)) { it.group = ''; } }); }
+      if (cb) { cb(o); } renderComps();
+    });
+  }
+  function setItemGroup(ids, gid) {
+    libCall('ES_libSetGroup', JSON.stringify({ ids: ids, group: gid }), function (o) {
+      if (!o.ok) { say(o.msg, 'err', 'msgLib'); return; }
+      lib.items.forEach(function (it) { if (ids.indexOf(it.id) >= 0) { it.group = gid; } });
+      var g = groupById(gid);
+      say(g ? 'Movido a “' + g.name + '”.' : 'Movido a Sin grupo.', 'ok', 'msgLib'); renderComps();
+    });
+  }
+  function groupNameInput(start, onDone) {
+    var inp = h('input', 'grpIn'); inp.type = 'text'; inp.value = start || ''; inp.placeholder = 'Nombre del grupo'; inp.maxLength = 40;
+    var done = false;
+    var fin = function (ok) { if (done) { return; } done = true; var v = inp.value.replace(/^\s+|\s+$/g, ''); onDone(ok && v ? v : ''); };
+    inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { fin(true); } if (ev.key === 'Escape') { fin(false); } ev.stopPropagation(); });
+    inp.addEventListener('blur', function () { fin(true); });
+    setTimeout(function () { inp.focus(); inp.select(); }, 0);
+    return inp;
+  }
+  function newGroup(name) {
+    var g = { id: 'g' + Date.now().toString(36), name: name };
+    lib.groups.push(g); return g;
+  }
+  function renderGroupBar() {
+    var bar = $('grpBar'); bar.innerHTML = '';
+    var count = function (gid) { return lib.items.filter(function (it) { return gid === '*' ? true : groupOf(it) === gid; }).length; };
+    var chip = function (gid, label) {
+      var b = btn('opt grp' + (lib.group === gid ? ' on' : ''), '', function () { lib.group = gid; renderComps(); });
+      b.appendChild(h('span', '', label)); b.appendChild(h('small', '', String(count(gid))));
+      b.setAttribute('aria-pressed', lib.group === gid ? 'true' : 'false');
+      if (gid !== '*') {
+        b.addEventListener('dragover', function (ev) { if (ui.libDrag) { ev.preventDefault(); b.classList.add('drop'); } });
+        b.addEventListener('dragleave', function () { b.classList.remove('drop'); });
+        b.addEventListener('drop', function (ev) { ev.preventDefault(); b.classList.remove('drop'); if (ui.libDrag) { setItemGroup([ui.libDrag], gid); ui.libDrag = null; } });
+      }
+      bar.appendChild(b); return b;
+    };
+    chip('*', 'Todas');
+    lib.groups.forEach(function (g) {
+      var b = chip(g.id, g.name);
+      if (lib.group === g.id && ui.renGroup === g.id) {
+        b.replaceWith(groupNameInput(g.name, function (v) { ui.renGroup = null; if (v && v !== g.name) { g.name = v; saveGroups(); } else { renderComps(); } }));
+      }
+    });
+    if (lib.groups.length && count('') > 0) { chip('', 'Sin grupo'); }
+    if (ui.addGroup) {
+      bar.appendChild(groupNameInput('', function (v) {
+        ui.addGroup = false;
+        if (!v) { renderComps(); return; }
+        var g = newGroup(v); lib.group = g.id; saveGroups(function () { say('Grupo “' + v + '” creado. Arrastra composiciones a él o guárdalas directamente ahí.', 'ok', 'msgLib'); });
+      }));
+    } else {
+      var add = btn('opt add', 'Grupo', function () { ui.addGroup = true; renderComps(); }, 'plus'); add.title = 'Crear un grupo (por ejemplo: Idealo, APPLEXBY)';
+      bar.appendChild(add);
     }
-    list.forEach(function (it) {
+    var cur = groupById(lib.group);
+    if (cur) {
+      var tools = h('span', 'grpTools');
+      var rn = btn('iconBtn', '', function () { ui.renGroup = cur.id; renderComps(); }, 'pencil'); rn.title = 'Renombrar el grupo'; rn.setAttribute('aria-label', 'Renombrar el grupo ' + cur.name);
+      var del = btn('iconBtn', '', function () {
+        if (del.getAttribute('data-sure') === '1') {
+          lib.groups = lib.groups.filter(function (g) { return g.id !== cur.id; }); lib.group = '*';
+          saveGroups(function () { say('Grupo “' + cur.name + '” borrado. Sus composiciones pasaron a Sin grupo.', 'ok', 'msgLib'); });
+        } else { del.setAttribute('data-sure', '1'); del.classList.add('danger'); del.title = 'Pulsa otra vez: el grupo se borra y sus composiciones quedan en Sin grupo'; setTimeout(function () { del.removeAttribute('data-sure'); del.classList.remove('danger'); del.title = 'Borrar el grupo'; }, 2500); }
+      }, 'trash'); del.title = 'Borrar el grupo'; del.setAttribute('aria-label', 'Borrar el grupo ' + cur.name);
+      tools.appendChild(rn); tools.appendChild(del); bar.appendChild(tools);
+    }
+    bar.hidden = !lib.items.length && !lib.groups.length;
+  }
+  function groupPop(anchor, it) {
+    closeGroupPop();
+    var pop = h('div', 'grpPop'); pop.id = 'grpPop'; pop.setAttribute('role', 'menu');
+    pop.appendChild(h('div', 'lab', 'Mover a'));
+    var opts = lib.groups.map(function (g) { return [g.id, g.name]; }); opts.push(['', 'Sin grupo']);
+    opts.forEach(function (o) {
+      var b = btn('it' + (groupOf(it) === o[0] ? ' on' : ''), o[1], function () { closeGroupPop(); if (groupOf(it) !== o[0]) { setItemGroup([it.id], o[0]); } });
+      b.setAttribute('role', 'menuitem'); pop.appendChild(b);
+    });
+    var nb = btn('it', 'Nuevo grupo…', function () {
+      nb.replaceWith(groupNameInput('', function (v) {
+        closeGroupPop(); if (!v) { return; }
+        var g = newGroup(v); saveGroups(function () { setItemGroup([it.id], g.id); });
+      }));
+    }, 'plus');
+    pop.appendChild(nb);
+    document.body.appendChild(pop);
+    var r = anchor.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    pop.style.left = Math.max(6, Math.min(window.innerWidth - pw - 6, r.right - pw)) + 'px';
+    pop.style.top = (r.bottom + 4 + ph > window.innerHeight ? Math.max(6, r.top - ph - 4) : r.bottom + 4) + 'px';
+    setTimeout(function () { document.addEventListener('mousedown', groupPopOutside, true); }, 0);
+  }
+  function groupPopOutside(ev) { var p = $('grpPop'); if (p && !p.contains(ev.target)) { closeGroupPop(); } }
+  function closeGroupPop() { var p = $('grpPop'); if (p) { p.remove(); } document.removeEventListener('mousedown', groupPopOutside, true); }
+
+  function compCard(it) {
       var card = h('div', 'ccard');
+      card.draggable = !!lib.groups.length;
+      card.addEventListener('dragstart', function (ev) { ui.libDrag = it.id; try { ev.dataTransfer.setData('text/plain', it.name); ev.dataTransfer.effectAllowed = 'move'; } catch (e) {} card.classList.add('dragging'); });
+      card.addEventListener('dragend', function () { ui.libDrag = null; card.classList.remove('dragging'); });
       var th = h('div', 'cthumb');
-      if (it.thumb) { var im = h('img'); im.src = fileUrl(it.thumb); im.alt = ''; im.onerror = function () { im.remove(); }; th.appendChild(im); }
+      if (it.thumb) { var im = h('img'); im.src = fileUrl(it.thumb); im.alt = ''; im.draggable = false; im.onerror = function () { im.remove(); }; th.appendChild(im); }
       else { th.appendChild(icon('comp')); }
       th.style.aspectRatio = it.w && it.h ? (it.w + ' / ' + it.h) : '';
       th.title = 'Doble clic: insertar en la composición activa';
@@ -646,16 +780,48 @@
         inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { fin(); } if (ev.key === 'Escape') { done = true; renderComps(); } ev.stopPropagation(); });
         inp.addEventListener('blur', fin);
       }, 'pencil'); rn.title = 'Renombrar'; rn.setAttribute('aria-label', 'Renombrar ' + it.name);
+      var gb = btn('iconBtn grpBtn', '', function () { groupPop(gb, it); }, 'tag'); gb.title = 'Mover a un grupo'; gb.setAttribute('aria-label', 'Mover ' + it.name + ' a un grupo');
       var fo = btn('iconBtn', '', function () { libCall('ES_libReveal', it.id, function () {}); }, 'folder'); fo.title = 'Mostrar en la carpeta';
       var del = btn('iconBtn', '', function () {
         if (del.getAttribute('data-sure') === '1') { libCall('ES_libDelete', it.id, function (o) { if (o.ok) { lib.items = lib.items.filter(function (x) { return x.id !== it.id; }); renderComps(); say('“' + it.name + '” borrado de la biblioteca.', 'ok', 'msgLib'); } }); }
         else { del.setAttribute('data-sure', '1'); del.classList.add('danger'); del.title = 'Pulsa otra vez para borrar'; setTimeout(function () { del.removeAttribute('data-sure'); del.classList.remove('danger'); del.title = 'Borrar'; }, 2500); }
       }, 'trash'); del.title = 'Borrar';
-      [op, rn, fo, del].forEach(function (b) { act.appendChild(b); });
+      [op, gb, rn, fo, del].forEach(function (b) { act.appendChild(b); });
       card.appendChild(th); card.appendChild(nm); card.appendChild(meta); card.appendChild(act);
-      g.appendChild(card);
-    });
-    if (!list.length) { g.appendChild(h('p', 'hint', 'Nada coincide con “' + q + '”.')); }
+      return card;
+  }
+  function renderComps() {
+    var g = $('compGrid'), q = ($('libSearch').value || '').toLowerCase(); g.innerHTML = '';
+    closeGroupPop();
+    if (!hasAE()) { $('grpBar').hidden = true; g.appendChild(h('p', 'hint', 'Abre este panel dentro de After Effects para usar la biblioteca.')); return; }
+    renderGroupBar();
+    var list = lib.items.filter(function (it) { return (!q || String(it.name).toLowerCase().indexOf(q) >= 0) && (lib.group === '*' || groupOf(it) === lib.group); });
+    $('libSearch').hidden = lib.items.length < 4;
+    if (!lib.items.length) {
+      var e = h('div', 'libEmpty');
+      e.appendChild(icon('comp'));
+      e.appendChild(h('b', '', 'Tu biblioteca está vacía'));
+      e.appendChild(h('span', '', 'Abre una composición (o selecciona capas) y pulsa “Guardar composición”. Se guarda con sus precomposiciones y archivos, y la puedes insertar en cualquier proyecto.'));
+      g.appendChild(e); return;
+    }
+    if (lib.group === '*' && lib.groups.length && !q) {
+      // todas, ordenadas por grupo
+      var sec = lib.groups.map(function (gr) { return [gr.id, gr.name]; }); sec.push(['', 'Sin grupo']);
+      sec.forEach(function (sg) {
+        var its = list.filter(function (it) { return groupOf(it) === sg[0]; });
+        if (!its.length) { return; }
+        var hd = h('button', 'grpHead'); hd.type = 'button'; hd.appendChild(h('b', '', sg[1])); hd.appendChild(h('small', '', its.length + (its.length === 1 ? ' composición' : ' composiciones')));
+        hd.title = 'Ver solo este grupo'; hd.addEventListener('click', function () { lib.group = sg[0]; renderComps(); });
+        g.appendChild(hd);
+        its.forEach(function (it) { g.appendChild(compCard(it)); });
+      });
+      return;
+    }
+    list.forEach(function (it) { g.appendChild(compCard(it)); });
+    if (!list.length) {
+      if (q) { g.appendChild(h('p', 'hint', 'Nada coincide con “' + q + '”.')); }
+      else { g.appendChild(h('p', 'hint', 'Este grupo está vacío. Arrastra una composición sobre su nombre, usa el botón de etiqueta de cada composición o guarda una nueva aquí.')); }
+    }
   }
   function libInsert(it, mode) {
     say(mode === 'insert' ? 'Insertando “' + it.name + '”…' : 'Abriendo “' + it.name + '”…', '', 'msgLib');
@@ -675,6 +841,12 @@
         box.appendChild(b);
       });
       $('compName').value = o.comp;
+      var gs = $('compGroup'); gs.innerHTML = '';
+      [['', 'Sin grupo']].concat(lib.groups.map(function (gr) { return [gr.id, gr.name]; })).concat([['__new', 'Nuevo grupo…']]).forEach(function (x) {
+        var op = h('option', '', x[1]); op.value = x[0]; gs.appendChild(op);
+      });
+      gs.value = groupById(lib.group) ? lib.group : '';
+      $('compNewGroup').hidden = true; $('compNewGroup').value = '';
       openCompSaveRefresh();
       $('compSave').hidden = false; $('compName').focus(); $('compName').select();
     });
@@ -692,8 +864,15 @@
   function doCompSave() {
     var name = $('compName').value.replace(/^\s+|\s+$/g, '');
     if (!name) { $('compName').focus(); return; }
+    var gsel = $('compGroup'), gid = gsel.value;
+    if (gid === '__new') {
+      var nameIn = $('compNewGroup'), gv = nameIn ? nameIn.value.replace(/^\s+|\s+$/g, '') : '';
+      if (!gv) { if (nameIn) { nameIn.focus(); } return; }
+      var ng = newGroup(gv); gid = ng.id;
+      libCall('ES_libGroupsSave', JSON.stringify({ groups: lib.groups }), function () {});
+    }
     $('compSaveOk').disabled = true; say('Guardando “' + name + '”… After Effects puede tardar unos segundos.', '', 'msgLib');
-    libCall('ES_libSave', JSON.stringify({ name: name, mode: lib.mode }), function (o) {
+    libCall('ES_libSave', JSON.stringify({ name: name, mode: lib.mode, group: gid }), function (o) {
       $('compSaveOk').disabled = false;
       if (!o.ok) { say(o.msg, 'err', 'msgLib'); return; }
       closeCompSave();
@@ -860,8 +1039,8 @@
           var d = pstore.get(seq.pres), tag = h('span', 'presTag', d ? d.name : 'Plantilla'); tag.title = d ? 'Plantilla de texto: ' + d.name : 'La plantilla ya no está en la biblioteca';
           tools.appendChild(tag);
         } else {
-          var ab = h('button', 'alignBtn' + (seq.align || seq.style ? ' set' : '')); ab.type = 'button'; ab.appendChild(icon(stl === 'karaoke' ? 'karaoke' : (stl === 'applexby' ? 'line' : 'stair')));
-          ab.title = 'Estilo de la frase: ' + (stl === 'karaoke' ? 'caja que recorre' : (stl === 'applexby' ? 'APPLEXBY (una línea)' : 'escalera, ' + ALIGN_NAME[seq.align || ''].toLowerCase()));
+          var ab = h('button', 'alignBtn' + (seq.align || seq.style ? ' set' : '')); ab.type = 'button'; ab.appendChild(icon(stl === 'karaoke' ? 'karaoke' : (ES.isLineStyle(stl) ? 'line' : 'stair')));
+          ab.title = 'Estilo de la frase: ' + (stl === 'karaoke' ? 'caja que recorre' : (stl === 'applexby' ? 'APPLEXBY' : stl === 'line' ? 'una línea' : 'escalera, ' + ALIGN_NAME[seq.align || ''].toLowerCase()));
           ab.setAttribute('aria-label', ab.title);
           ab.addEventListener('click', function (ev) {
             Model.selectSeq(st, sel, i, false); setActiveSeq(i); render();
@@ -974,13 +1153,13 @@
     var measure = function (text, px, font) { mctx.font = cssFont(font || S.font, px); return mctx.measureText(text).width; };
     var base = { sizes: { S: S.szS, M: S.szM, L: S.szL }, gap: S.gapPx, lineGap: S.lineGap, align: seq.align || S.align,
       alignIndex: si, safe: safe, centerX: W / 2, centerY: H * S.centerY / 100, fit: S.fit !== false, smallAlign: 'top', boxPad: { x: 14, y: 8 } };
-    var style = seq.style || S.editStyle, karaoke = style === 'karaoke', apx = style === 'applexby', lay, keys = null;
-    if (apx) {
-      var af = S.apxFont || S.font;
-      var am = function (text, px, font) { mctx.font = cssFont(font || af, px, 700); return mctx.measureText(text).width; };
-      var aw = []; seq.words.forEach(function (w, j) { aw.push({ text: ES.displayText(w.text, cls[j], false) }); });
-      lay = ES.layoutLine(aw, cls, { size: S.apxSize || 64, safe: safe, centerX: W / 2, centerY: H * (S.apxCenterY || 70) / 100, font: af }, am);
-      return { seq: seq, lay: lay, cls: cls, words: aw, safe: safe, W: W, H: H, apx: true, font: af };
+    var style = seq.style || S.editStyle, karaoke = style === 'karaoke', lay, keys = null;
+    if (ES.isLineStyle(style)) {
+      var A = Model.lineLook(S, style), af = A.font || S.font;
+      var am = function (text, px, font) { return trackedWidth(text, cssFont(font || af, px, 700), px, A.track); };
+      var aw = []; seq.words.forEach(function (w, j) { aw.push({ text: lineText(w.text, cls[j], A) }); });
+      lay = ES.layoutLine(aw, cls, { size: A.size, gap: A.size * A.gap, safe: safe, centerX: W / 2, centerY: H * A.centerY, font: af }, am);
+      return { seq: seq, lay: lay, cls: cls, words: aw, safe: safe, W: W, H: H, line: A, font: af };
     }
     if (karaoke) {
       base.karaokeSize = S.karSize || 'M';
@@ -988,6 +1167,27 @@
       keys = ES.karaokeKeys(lay.boxes, seq.words, { move: S.karMove, padX: 14 * lay.scale, padY: 8 * lay.scale });
     } else { lay = ES.layoutLockup(words, cls, base, measure); }
     return { seq: seq, lay: lay, cls: cls, words: words, safe: safe, W: W, H: H, karaoke: karaoke, keys: keys };
+  }
+  // texto y medida de los estilos de una linea (mismo criterio que After Effects: tracking en milesimas de em)
+  function lineText(text, c, A) {
+    var t = ES.displayText(text, c, A.caps === 'upper');
+    return (A.caps === 'lower' && !c.caps) ? t.toLowerCase() : t;
+  }
+  function trackedWidth(text, font, px, track) {
+    mctx.font = font; var w = mctx.measureText(text).width, n = Array.from(text).length;
+    return w + (n > 1 ? (n - 1) * (track || 0) / 1000 * px : 0);
+  }
+  // dibuja con tracking letra por letra (el canvas del panel no siempre tiene letterSpacing)
+  function drawTracked(ctx, text, x, y, px, track, stroke) {
+    var ch = Array.from(text), sp = (track || 0) / 1000 * px, i, xs = [], cx = x;
+    for (i = 0; i < ch.length; i++) { xs.push(cx); cx += ctx.measureText(ch[i]).width + sp; }
+    if (stroke) {
+      ctx.save(); ctx.shadowColor = 'transparent'; ctx.lineJoin = 'round'; ctx.miterLimit = 2; ctx.strokeStyle = stroke.colorHex; ctx.lineWidth = stroke.width; // como AE: el contorno va centrado en el borde y la mitad queda bajo el relleno
+      for (i = 0; i < ch.length; i++) { ctx.strokeText(ch[i], xs[i], y); }
+      ctx.restore();
+    }
+    if (!sp) { ctx.fillText(text, x, y); return; }
+    for (i = 0; i < ch.length; i++) { ctx.fillText(ch[i], xs[i], y); }
   }
   function rr(ctx, x, y, w, hh, r) {
     r = Math.min(r, hh / 2, w / 2);
@@ -1003,7 +1203,7 @@
     $('monToggle').setAttribute('aria-expanded', mon.open ? 'true' : 'false');
     if (!st.seqs.length) { return; }
     var si = activeSi(), L = layoutSeq(si), seq = L.seq, lay = L.lay;
-    var meta = (si + 1) + '/' + st.seqs.length + ' · ' + fmtTime(seq.start) + ' · ' + (L.karaoke ? 'Caja que recorre' : (L.apx ? 'APPLEXBY' : ALIGN_NAME[lay.align])) + (lay.scale < 0.999 ? ' · reducida ' + Math.round(lay.scale * 100) + '%' : '');
+    var meta = (si + 1) + '/' + st.seqs.length + ' · ' + fmtTime(seq.start) + ' · ' + (L.karaoke ? 'Caja que recorre' : (L.line ? (L.line.style === 'applexby' ? 'APPLEXBY' : 'Una línea') : ALIGN_NAME[lay.align])) + (lay.scale < 0.999 ? ' · reducida ' + Math.round(lay.scale * 100) + '%' : '');
     if (seq.pres) { var pd = pstore.get(seq.pres); meta = 'Frase ' + (si + 1) + ' · plantilla “' + (pd ? pd.name : '?') + '”'; }
     $('monMeta').textContent = meta; $('monMeta').title = meta;
     $('monPrev').disabled = si <= 0; $('monNext').disabled = si >= st.seqs.length - 1;
@@ -1029,7 +1229,7 @@
     mon.hits = [];
     if (seq.pres) { drawPres(ctx, L, k, dpr); return; }
     if (L.karaoke) { drawKaraoke(ctx, L, k, dpr, t, ya); return; }
-    if (L.apx) { drawApx(ctx, L, k, dpr, t, ya); return; }
+    if (L.line) { drawLine(ctx, L, k, dpr, t, ya); return; }
     var def = Model.defaultAnim(S), i;
     for (i = 0; i < lay.boxes.length; i++) {
       var bx = lay.boxes[i], c = L.cls[i], text = L.words[i].text, w = seq.words[i];
@@ -1072,24 +1272,40 @@
       mon.hits.push({ id: w.id, x0: (bx.x - 8) * k, x1: (bx.x + bx.w + 8) * k, y0: (bx.y - bx.size * 0.8 - ya) * k, y1: (bx.y + 8 - ya) * k });
     }
   }
-  // estilo APPLEXBY: palabra por palabra con desenfoque, salida invertida al final de la frase
-  function drawApx(ctx, L, k, dpr, t, ya) {
-    var seq = L.seq, lay = L.lay, i, end = ES.seqEnd(seq, S.tail, null) - seq.start;
+  // estilos de una linea: palabra por palabra (APPLEXBY con desenfoque; Una linea con la animacion de la edicion)
+  function drawLine(ctx, L, k, dpr, t, ya) {
+    var seq = L.seq, lay = L.lay, A = L.line, i, end = ES.seqEnd(seq, S.tail, null) - seq.start;
+    var def = Model.defaultAnim(S), base = A.anim ? ES.resolveAnim(def, A.anim) : def;
     mon.hits = [];
     for (i = 0; i < lay.boxes.length; i++) {
-      var bx = lay.boxes[i], c = L.cls[i], w = seq.words[i], alpha = 1, blur = 0;
+      var bx = lay.boxes[i], c = L.cls[i], w = seq.words[i], alpha = 1, blur = 0, dx = 0, dy = 0, sc = 1;
       if (t != null) {
+        var a = c.trans ? ES.resolveAnim(def, c.trans) : base;
         var rel = t - (w.start - seq.start); if (rel < 0) { continue; }
-        var e = easeOut(Math.min(1, rel / 0.3)); alpha = e; blur = 20 * (1 - e);
-        if (S.apxExit !== false && t > end - 0.3) { var x = Math.min(1, (t - (end - 0.3)) / 0.3); alpha *= 1 - x * x; blur = Math.max(blur, 20 * x * x); }
+        var p = Math.min(1, rel / Math.max(0.01, a.dur)), e = easeOut(p);
+        if (a.fade) { alpha = e; }
+        var off = (a.dist || 0) * (1 - e);
+        if (a.dir === 'up') { dy = off; } else if (a.dir === 'down') { dy = -off; } else if (a.dir === 'left') { dx = off; } else if (a.dir === 'right') { dx = -off; }
+        if (a.scale) { sc = a.scale.from / 100 + (1 - a.scale.from / 100) * e; }
+        blur = (a.blur || 0) * (1 - e);
+        if (A.exit && t > end - base.dur) {
+          var x = Math.min(1, (t - (end - base.dur)) / base.dur);
+          if (base.fade) { alpha *= 1 - x * x; }
+          blur = Math.max(blur, (base.blur || 0) * x * x);
+        }
       }
+      var cx = bx.x + bx.w / 2, cy = bx.y - bx.size * 0.36;
       ctx.save(); ctx.globalAlpha = Math.max(0, alpha);
+      ctx.translate(cx + dx, cy + dy); ctx.scale(sc, sc); ctx.translate(-cx, -cy);
       if (blur > 0.5) { ctx.filter = 'blur(' + (blur * k * 0.6).toFixed(2) + 'px)'; }
       ctx.font = cssFont(c.font || L.font, bx.size, 700);
-      if (S.apxShadow !== false) { ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 16 * k * dpr; ctx.shadowOffsetY = 4 * k * dpr; }
+      if (A.shadow) {
+        ctx.shadowColor = 'rgba(0,0,0,' + (A.shadowLook.opacity / 100).toFixed(2) + ')';
+        ctx.shadowBlur = A.shadowLook.softness * k * dpr; ctx.shadowOffsetY = A.shadowLook.distance * k * dpr;
+      }
       if (c.glow) { ctx.shadowColor = c.glowColor || S.glowColor; ctx.shadowBlur = S.glowSize * k * dpr * 0.9; ctx.shadowOffsetY = 0; }
-      ctx.fillStyle = c.color || (c.brand ? (S.apxKey || '#ff0101') : (S.apxColor || '#f5f5f5'));
-      ctx.fillText(L.words[i].text, bx.x, bx.y);
+      ctx.fillStyle = c.color || (c.brand ? A.keyHex : A.colorHex);
+      drawTracked(ctx, L.words[i].text, bx.x, bx.y, bx.size, A.track, A.stroke ? { colorHex: A.stroke.colorHex, width: A.stroke.width * lay.scale } : null);
       ctx.restore();
       if (t == null && Model.isSel(sel, w.id)) {
         ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.5 / k;
@@ -1445,10 +1661,12 @@
       f.appendChild(h('hr'));
       flyItem(f, { label: 'Caja que recorre', ic: 'karaoke', on: curStyle === 'karaoke', key: 'frase entera',
         act: function () { setStyle('karaoke', null, 'Estilo: caja que recorre.'); } });
+      flyItem(f, { label: 'Una línea', ic: 'line', on: curStyle === 'line',
+        act: function () { setStyle('line', null, 'Estilo: una línea.'); } });
       flyItem(f, { label: 'APPLEXBY', ic: 'line', on: curStyle === 'applexby', key: 'una línea',
-        act: function () { setStyle('applexby', null, 'Estilo: APPLEXBY (una línea).'); } });
+        act: function () { setStyle('applexby', null, 'Estilo: APPLEXBY.'); } });
       f.appendChild(h('hr'));
-      flyItem(f, { label: 'Usar el de la edición (' + ({ karaoke: 'caja', applexby: 'APPLEXBY' }[S.editStyle] || 'escalera') + ')', check: true, on: curStyle === '',
+      flyItem(f, { label: 'Usar el de la edición (' + ({ karaoke: 'caja', applexby: 'APPLEXBY', line: 'una línea' }[S.editStyle] || 'escalera') + ')', check: true, on: curStyle === '',
         act: function () { setStyle('', '', 'Estilo de la edición.'); } });
     },
     remove: function (f) {
@@ -1626,6 +1844,7 @@
   $('btnLibRefresh').addEventListener('click', loadLib);
   $('btnLibFolder').addEventListener('click', function () { libCall('ES_libReveal', '', function () {}); });
   $('libSearch').addEventListener('input', renderComps);
+  $('compGroup').addEventListener('change', function () { var n = $('compNewGroup'); n.hidden = $('compGroup').value !== '__new'; if (!n.hidden) { n.focus(); } });
   $('btnSavePres').addEventListener('click', savePresentation);
   $('presNameNo').addEventListener('click', function () { $('presName').hidden = true; ui.pendingDef = null; });
   $('presNameOk').addEventListener('click', function () {
@@ -1793,11 +2012,27 @@
   });
 
   // ================= actualizaciones =================
-  // Avisa en el panel cuando hay una version nueva publicada; la instalacion la hace el panel "Laddersu · Actualizaciones".
-  var UPD_BUS = 'com.idealo.laddersu.updated', UPD_ID = 'com.idealo.laddersu.updater';
+  // Avisa en el panel cuando hay una version nueva publicada. La instala la app de escritorio "Laddersu"
+  // (%LOCALAPPDATA%\Programs\Laddersu\Laddersu.exe), que se instala junto con el panel.
+  var DL_URL = 'https://github.com/Applexby/laddersu/releases/latest/download/Laddersu-Setup.exe';
   var appVersion = '';
+  function appExe() {
+    try { var p = require('path'), base = process.env.LOCALAPPDATA; return base ? p.join(base, 'Programs', 'Laddersu', 'Laddersu.exe') : ''; } catch (e) { return ''; }
+  }
+  function openURL(u) {
+    try { if (window.cep && window.cep.util) { window.cep.util.openURLInDefaultBrowser(u); return; } } catch (e) {}
+    try { require('child_process').spawn('cmd', ['/c', 'start', '', u], { detached: true, stdio: 'ignore' }).unref(); } catch (e2) { window.open(u); }
+  }
   function openUpdater() {
-    try { window.__adobe_cep__.requestOpenExtension(UPD_ID, ''); } catch (e) { say('Abre Ventana ▸ Extensiones ▸ Laddersu · Actualizaciones.', 'err'); }
+    var exe = appExe();
+    try {
+      if (exe && require('fs').existsSync(exe)) {
+        require('child_process').spawn(exe, [], { detached: true, stdio: 'ignore' }).unref();
+        say('Se abrió la app Laddersu: pulsa Actualizar y luego reinicia After Effects.', 'ok'); return;
+      }
+    } catch (e) {}
+    say('No encontré la app Laddersu: se descarga el instalador de la última versión.', 'ok');
+    openURL(DL_URL);
   }
   function updBar(text, btnLabel, fn, dismissKey) {
     var b = $('updBar'); b.innerHTML = '';
@@ -1824,18 +2059,6 @@
       if (s.state === 'update') { showUpdate(s.latest); }
     });
   }
-  (function () {
-    try {
-      window.__adobe_cep__.addEventListener(UPD_BUS, function (ev) {
-        var d = ev && ev.data !== undefined ? ev.data : ev;
-        try { if (typeof d === 'string') { d = JSON.parse(d); } } catch (e) { return; }
-        if (!d) { return; }
-        if (d.kind === 'status' && d.state === 'update') { lsSet('laddersu.updLatest', d.latest); showUpdate(d.latest); }
-        if (d.kind === 'installed') { updBar('Laddersu ' + d.version + ' instalada. Recarga el panel para usarla.', 'Recargar', function () { location.reload(); }); }
-        if (d.kind === 'reload') { location.reload(); }
-      });
-    } catch (e) {}
-  })();
   readText('version.json', function (txt) {
     try { appVersion = JSON.parse(txt).version; } catch (e) { appVersion = Model.HOST_VER; }
     if (!appVersion) { appVersion = Model.HOST_VER; }

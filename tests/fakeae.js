@@ -81,7 +81,7 @@ function create() {
   }
   Layer.prototype.property = function (m) { var i; for (i = 0; i < this.root.length; i++) { if (this.root[i].matchName === m) { return this.root[i]; } } return null; };
   Layer.prototype.sourceRectAtTime = function () {
-    var td = this.td || { text: '', fontSize: 50 }, px = td.fontSize, w = td.text.length * px * 0.55;
+    var td = this.td || { text: '', fontSize: 50 }, px = td.fontSize, w = td.text.length * px * 0.55 + Math.max(0, td.text.length - 1) * (td.tracking || 0) / 1000 * px;
     return { left: 0, top: -px * 0.8, width: w, height: px };
   };
   Layer.prototype.remove = function () { if (this.locked) { throw new Error('capa bloqueada'); } var l = this.comp.layerList; l.splice(l.indexOf(this), 1); };

@@ -353,5 +353,19 @@ console.log('\n' + pass + ' pruebas de motor OK');
     [0.5, 1.5, 2.06, 4.95, 6, 8.2].forEach(function (tt) { assert(Math.abs(f(tt, 100) - 100 * ES.hideAt(m, tt)) < 1e-9, 't=' + tt); });
     assert.strictEqual(ES.hideAt(m, 1.5), 0); assert.strictEqual(ES.hideAt(m, 3), 1);
   });
+  t('frases cortas: 2 palabras, nunca termina en palabra funcion, corta en pausas', function () {
+    function G(list, o) { var t0 = 0; var it = list.map(function (x) { var e = { text: x, start: t0, end: t0 + 0.3 }; t0 += 0.32; return e; });
+      return ES.groupShort(it, o).map(function (g) { return g.map(function (e) { return e.text; }).join(' '); }); }
+    assert.deepStrictEqual(G(['o', 'simplemente', 'pregunta', 'por', 'qué']), ['o simplemente', 'pregunta', 'por qué']);
+    assert.deepStrictEqual(G(['nunca', 'frenes,', 'solo', 'sigue']), ['nunca frenes,', 'solo sigue']);
+    assert.deepStrictEqual(G(['camina', 'hacia', 'el', 'norte']), ['camina hacia', 'el norte']);
+    assert.deepStrictEqual(G(['de', 'la', 'casa', 'grande']), ['de la casa', 'grande']);
+    assert.deepStrictEqual(G(['extraordinariamente', 'complicado']), ['extraordinariamente', 'complicado'], 'tope de letras');
+    assert.deepStrictEqual(G(['uno', 'dos', 'tres'], { maxWords: 1 }), ['uno', 'dos', 'tres']);
+    assert.deepStrictEqual(G(['uno', 'dos', 'tres'], { maxWords: 3 }), ['uno dos tres']);
+    var it = [{ text: 'hola', start: 0, end: 0.3 }, { text: 'mundo', start: 1.2, end: 1.5 }];
+    assert.strictEqual(ES.groupShort(it, {}).length, 2, 'silencio largo');
+    assert.strictEqual(ES.groupShort(it, {})[0][0], it[0], 'devuelve los mismos objetos');
+  });
 })();
 console.log(pass + ' pruebas de motor OK');

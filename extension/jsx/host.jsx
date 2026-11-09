@@ -6,7 +6,7 @@
  * Carga del motor: se intenta aqui por rutas conocidas, pero la via fiable es que el panel
  * inyecte engine.js con evalScript si ES_status() dice que falta (ver js/main.js).
  */
-var ES_VERSION = '0.6.0';
+var ES_VERSION = '0.6.1';
 
 function ES_loadEngine() {
   if (typeof ES !== 'undefined' && ES.VERSION === ES_VERSION) { return true; }
@@ -168,14 +168,16 @@ function ES_addWord(comp, text, px, color, font, name, warn) {
 
 function ES_measurer(comp, cfg, warn) {
   var cache = {}, tmp = null;
-  var fn = function (text, px, font) {
+  var fn = function (text, px, font, track) {
     font = font || cfg.font || '';
-    var k = text + '|' + px + '|' + font;
+    track = track || 0;
+    var k = text + '|' + px + '|' + font + '|' + track;
     if (cache[k] !== undefined) { return cache[k]; }
     if (!tmp) { tmp = ES_addWord(comp, text, px, [1, 1, 1], font, 'ES_tmp', warn); }
     var tp = tmp.property('ADBE Text Properties').property('ADBE Text Document');
     var td = tp.value;
     td.text = text; td.fontSize = px;
+    try { td.tracking = track; } catch (eT) {}
     if (font) { try { td.font = font; } catch (e) {} }
     tp.setValue(td);
     cache[k] = tmp.sourceRectAtTime(0, false).width;
@@ -725,34 +727,54 @@ function ES_easeIn(prop) {
   for (i = 0; i < dims; i++) { arr.push(new KeyframeEase(0, 75)); }
   try { if (n >= 2) { prop.setTemporalEaseAtKey(n - 1, arr, arr); prop.setTemporalEaseAtKey(n, arr, arr); } } catch (e) {}
 }
-// sombra suave para leer sobre video
-function ES_addShadow(layer) {
+// sombra suave para leer sobre video. look = {opacity (%), distance, softness}
+function ES_addShadow(layer, look) {
+  look = look || { opacity: 60, distance: 4, softness: 16 };
   var fx = layer.property('ADBE Effect Parade').addProperty('ADBE Drop Shadow');
   fx.property('ADBE Drop Shadow-0001').setValue([0, 0, 0, 1]);
-  fx.property('ADBE Drop Shadow-0002').setValue(150);
+  fx.property('ADBE Drop Shadow-0002').setValue(Math.round(look.opacity * 2.55));
   fx.property('ADBE Drop Shadow-0003').setValue(180);
-  fx.property('ADBE Drop Shadow-0004').setValue(4);
-  fx.property('ADBE Drop Shadow-0005').setValue(16);
+  fx.property('ADBE Drop Shadow-0004').setValue(look.distance);
+  fx.property('ADBE Drop Shadow-0005').setValue(look.softness);
   try { fx.name = 'Sombra suave'; } catch (e) {}
 }
+// tracking y contorno (detras del relleno) sobre una capa de texto ya creada
+function ES_textLook(layer, track, stroke) {
+  var tp = layer.property('ADBE Text Properties').property('ADBE Text Document'), td = tp.value;
+  if (track) { try { td.tracking = track; } catch (e0) {} }
+  if (stroke && stroke.width > 0) {
+    try {
+      td.applyStroke = true; td.strokeColor = ES_hex(stroke.colorHex); td.strokeWidth = stroke.width; td.strokeOverFill = false;
+    } catch (e1) {}
+  }
+  tp.setValue(td);
+}
 
-function ES_styleApx(ctx, seq) {
-  var comp = ctx.comp, cfg = ctx.cfg, A = cfg.apx || { font: '', size: 64, colorHex: '#f5f5f5', keyHex: '#ff0101', centerY: 0.7, shadow: true, exit: true };
+// ---------- estilos de una linea: "Una linea" (tradicional) y APPLEXBY ----------
+// A = cfg.line o cfg.apx (Model.lineLook): fuente, tamano, colores, mayusculas/minusculas, tracking, espacio entre
+// palabras, contorno, sombra, salida y animacion de entrada ('' = la de la edicion).
+function ES_styleLine(ctx, seq, A) {
+  var comp = ctx.comp, cfg = ctx.cfg;
   var n = seq.words.length, i, disp = [], words = [];
-  for (i = 0; i < n; i++) { disp.push(ES.displayText(seq.words[i].text, seq.cls[i], false)); words.push({ text: disp[i] }); }
-  var font = A.font || cfg.font;
-  var measure = function (text, px, f) { return ctx.measure(text, px, f || font); };
-  var lay = ES.layoutLine(words, seq.cls, { size: A.size, safe: ctx.zone.safe, centerX: ctx.zone.cx, centerY: comp.height * A.centerY, font: font }, measure);
+  for (i = 0; i < n; i++) {
+    var c0 = seq.cls[i], t0 = ES.displayText(seq.words[i].text, c0, A.caps === 'upper');
+    if (A.caps === 'lower' && !c0.caps) { t0 = t0.toLowerCase(); }
+    disp.push(t0); words.push({ text: t0 });
+  }
+  var font = A.font || cfg.font, track = A.track || 0;
+  var measure = function (text, px, f) { return ctx.measure(text, px, f || font, track); };
+  var lay = ES.layoutLine(words, seq.cls, { size: A.size, gap: A.size * A.gap, safe: ctx.zone.safe, centerX: ctx.zone.cx, centerY: comp.height * A.centerY, font: font }, measure);
   var end = ES.seqEnd(seq, cfg.tail, seq.nextStart);
-  var anim = ES.resolveAnim(cfg.anim, 'blurIn');
+  var anim = A.anim ? ES.resolveAnim(cfg.anim, A.anim) : cfg.anim;
   for (i = 0; i < n; i++) {
     var c = seq.cls[i];
     var col = ES_hex(c.color || (c.brand ? A.keyHex : A.colorHex));
     var L = ES_addWord(comp, disp[i], lay.boxes[i].size, col, c.font || font, disp[i], ctx.warn);
+    if (track || A.stroke) { ES_textLook(L, track, A.stroke ? { colorHex: A.stroke.colorHex, width: A.stroke.width * lay.scale } : null); }
     var pl = ES_place(L, lay.boxes[i].x, lay.boxes[i].y);
     var tin = seq.words[i].start;
     L.inPoint = tin; L.outPoint = end;
-    if (A.shadow) { ES_addShadow(L); }
+    if (A.shadow) { ES_addShadow(L, A.shadowLook); }
     var a = c.trans ? ES.resolveAnim(cfg.anim, c.trans) : anim;
     ES_animateIn(L, pl.pos, a, tin);
     if (A.exit && end - tin > a.dur + 0.32) { ES_animateOut(L, anim, end); }
@@ -761,6 +783,14 @@ function ES_styleApx(ctx, seq) {
     if (c.sfx) { ES_addSfx(comp, c.sfx, tin, disp[i], ctx); }
   }
   ctx.scaleMin = Math.min(ctx.scaleMin, lay.scale);
+}
+function ES_lineDefault() {
+  return { style: 'line', font: '', size: 64, colorHex: '#ffffff', keyHex: '#ffd400', centerY: 0.7, shadow: true, exit: false,
+    caps: 'none', track: 0, gap: 0.28, stroke: null, shadowLook: { opacity: 60, distance: 4, softness: 16 }, anim: '' };
+}
+function ES_styleApx(ctx, seq) {
+  ES_styleLine(ctx, seq, ctx.cfg.apx || { style: 'applexby', font: '', size: 64, colorHex: '#ff1a1a', keyHex: '#ff1a1a', centerY: 0.7, shadow: true, exit: true,
+    caps: 'lower', track: -60, gap: 0.14, stroke: { colorHex: '#ffffff', width: 5 }, shadowLook: { opacity: 35, distance: 6, softness: 12 }, anim: 'blurIn' });
 }
 
 // subtitulos ocultos mientras hay un T2 en pantalla (expresion en Opacidad, editable a mano)
@@ -851,6 +881,7 @@ function ES_step(jsonStr) {
       if (def) { ES_makePres(ctx, seq, def, seq.slots || []); }
       else if (seq.style === 'karaoke') { ES_styleKaraoke(ctx, seq); }
       else if (seq.style === 'applexby') { ES_styleApx(ctx, seq); }
+      else if (seq.style === 'line') { ES_styleLine(ctx, seq, R.cfg.line || ES_lineDefault()); }
       else { ES_styleLockup(ctx, seq); }
       if (!def && R.cfg.hide && R.cfg.hide.length) {
         var hid = ES.hideFor(R.cfg.hide, seq.start, ES.seqEnd(seq, R.cfg.tail, seq.nextStart));
@@ -972,7 +1003,7 @@ function ES_libList() {
       m.dir = dirs[i].fsName;
       out.push(m);
     }
-    return '{"ok":true,"root":"' + ES_esc(root.fsName) + '","items":' + ES_json(out) + '}';
+    return '{"ok":true,"root":"' + ES_esc(root.fsName) + '","items":' + ES_json(out) + ',"groups":' + ES_json(ES_libGroups()) + '}';
   } catch (e) {
     return '{"ok":false,"msg":"' + ES_esc(e.toString()) + '"}';
   }
@@ -1002,7 +1033,7 @@ function ES_libSave(jsonStr) {
       app.endUndoGroup();
     }
     var meta = { name: name, comp: target.name, w: target.width, h: target.height, dur: target.duration, fps: target.frameRate,
-                 layers: target.numLayers, created: new Date().getTime(), from: app.project.file.name };
+                 layers: target.numLayers, created: new Date().getTime(), from: app.project.file.name, group: o.group || '' };
     var targetId = target.id;
     app.project.save();                                  // tu proyecto queda guardado tal cual
     orig = app.project.file;
@@ -1091,6 +1122,40 @@ function ES_libRename(jsonStr) {
   try {
     var o = ES_parse(jsonStr), file = ES_libRoot().fullName + '/' + o.id + '/meta.json';
     var m = ES_parse(ES_readText(file) || '{}'); m.name = o.name; ES_writeText(file, ES_json(m));
+    return '{"ok":true}';
+  } catch (e) { return '{"ok":false,"msg":"' + ES_esc(e.toString()) + '"}'; }
+}
+// ---------- grupos de la biblioteca (groups.json en la carpeta de la biblioteca; cada elemento guarda meta.group) ----------
+function ES_libGroups() {
+  var txt = ES_readText(ES_libRoot().fullName + '/groups.json'), g = null;
+  try { g = txt ? ES_parse(txt) : null; } catch (e) { g = null; }
+  return g && g.groups && g.groups.length !== undefined ? g.groups : [];
+}
+// o = {groups:[{id,name}]}: guarda la lista; los elementos de un grupo que ya no existe pasan a "Sin grupo"
+function ES_libGroupsSave(jsonStr) {
+  try {
+    var o = ES_parse(jsonStr), root = ES_libRoot(), keep = {}, i, n = 0;
+    for (i = 0; i < o.groups.length; i++) { keep[o.groups[i].id] = true; }
+    ES_writeText(root.fullName + '/groups.json', ES_json({ groups: o.groups }));
+    var dirs = root.getFiles();
+    for (i = 0; i < dirs.length; i++) {
+      if (!(dirs[i] instanceof Folder)) { continue; }
+      var f = dirs[i].fullName + '/meta.json', txt = ES_readText(f);
+      if (!txt) { continue; }
+      var m; try { m = ES_parse(txt); } catch (e0) { continue; }
+      if (m.group && !keep[m.group]) { m.group = ''; ES_writeText(f, ES_json(m)); n++; }
+    }
+    return '{"ok":true,"moved":' + n + '}';
+  } catch (e) { return '{"ok":false,"msg":"' + ES_esc(e.toString()) + '"}'; }
+}
+// o = {ids:[...], group:''|id}
+function ES_libSetGroup(jsonStr) {
+  try {
+    var o = ES_parse(jsonStr), root = ES_libRoot(), i;
+    for (i = 0; i < o.ids.length; i++) {
+      var f = root.fullName + '/' + o.ids[i] + '/meta.json', m = ES_parse(ES_readText(f) || '{}');
+      m.group = o.group || ''; ES_writeText(f, ES_json(m));
+    }
     return '{"ok":true}';
   } catch (e) { return '{"ok":false,"msg":"' + ES_esc(e.toString()) + '"}'; }
 }

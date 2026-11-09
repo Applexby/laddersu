@@ -53,7 +53,8 @@
   <symbol id="i-insert" viewBox="0 0 16 16"><rect x="1.5" y="6" width="13" height="8" rx="1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M8 1.5v7.3M5.6 6.6 8 9l2.4-2.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
   <symbol id="i-karaoke" viewBox="0 0 16 16"><rect x="5.5" y="5" width="6" height="6" rx="1.6" fill="currentColor" opacity=".35"/><path d="M1.5 8h2.5M6.5 8h4M12.5 8h2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.8"/></symbol>
   <symbol id="i-remove" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-  <symbol id="i-line" viewBox="0 0 16 16"><path d="M2 10.5h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M11 10.5h3" stroke="#ff0101" stroke-width="2" stroke-linecap="round"/><path d="M4 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".45"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor"/></symbol>
+<symbol id="i-line" viewBox="0 0 16 16"><path d="M2 10.5h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M11 10.5h3" stroke="#ff0101" stroke-width="2" stroke-linecap="round"/><path d="M4 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".45"/></symbol>
 </svg>
 
 <div id="app">
@@ -163,10 +164,14 @@
         <div class="choice" id="compMode"></div>
         <label class="lab2" for="compName">Nombre</label>
         <input id="compName" type="text" placeholder="Promo 2">
+        <label class="lab2" for="compGroup">Grupo</label>
+        <select id="compGroup"></select>
+        <input id="compNewGroup" type="text" placeholder="Nombre del nuevo grupo (ej. Idealo)" maxlength="40" hidden>
         <p class="hint" id="compNote"></p>
         <div class="row"><button id="compSaveOk" class="pill" type="button">Guardar</button><button id="compSaveNo" class="pill ghost" type="button">Cancelar</button></div>
       </div>
       <input id="libSearch" class="search" type="text" placeholder="Buscar en la biblioteca" aria-label="Buscar en la biblioteca">
+      <div id="grpBar" class="opts grpBar" role="toolbar" aria-label="Grupos de la biblioteca"></div>
       <div id="compGrid" class="compGrid"></div>
       <div id="msgLib" class="msg"></div>
     </div>

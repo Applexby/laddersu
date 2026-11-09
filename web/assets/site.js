@@ -20,6 +20,9 @@
     [['Frieren', 1], ['camina', 0], ['sola', 0], ['hacia', 0], ['el', 0], ['norte', 0]]
   ];
 
+  // frases cortas de los estilos de una linea (1 o 2 palabras; la palabra funcion va con la siguiente)
+  var SHORT = [['o', 'simplemente'], ['nunca', 'frenes,'], ['sigue', 'caminando'], ['hacia', 'el', 'norte']];
+
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (txt != null) { e.textContent = txt; } return e; }
   var timers = [];
   function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
@@ -54,15 +57,16 @@
     if (loop) { later(function () { playKara(box, i + 1, true); }, spans.length * 380 + 1600); }
   }
 
-  function playApx(box, i, loop) {
+  // Una linea y APPLEXBY: frase corta, palabra por palabra; luego la siguiente
+  function playShort(box, i, loop) {
     box.innerHTML = '';
-    var line = LINES[i % LINES.length], spans = [];
-    line.forEach(function (w, k) { var s = el('span', 'w' + (w[1] ? ' k' : ''), w[0]); spans.push(s); box.appendChild(s); if (k < line.length - 1) { box.appendChild(document.createTextNode(' ')); } });
+    var line = SHORT[i % SHORT.length], spans = [];
+    line.forEach(function (w, k) { var s = el('span', 'w', w); spans.push(s); box.appendChild(s); if (k < line.length - 1) { box.appendChild(document.createTextNode(' ')); } });
     if (reduce) { spans.forEach(function (s) { s.classList.add('on'); }); return; }
-    spans.forEach(function (s, k) { later(function () { s.classList.add('on'); }, 200 + k * 220); });
+    spans.forEach(function (s, k) { later(function () { s.classList.add('on'); }, 150 + k * 260); });
     if (loop) {
-      later(function () { spans.forEach(function (s) { s.classList.remove('on'); }); }, 200 + spans.length * 220 + 1700);
-      later(function () { playApx(box, i + 1, true); }, 200 + spans.length * 220 + 2200);
+      later(function () { spans.forEach(function (s) { s.classList.remove('on'); }); }, 150 + spans.length * 260 + 900);
+      later(function () { playShort(box, i + 1, true); }, 150 + spans.length * 260 + 1250);
     }
   }
 
@@ -70,14 +74,15 @@
   var demo = document.getElementById('demo');
   if (demo) {
     var lock = document.getElementById('demoLock'), current = 'lock';
-    var kara = el('div', 'kara'), apx = el('div', 'apx');
+    var kara = el('div', 'kara'), apx = el('div', 'apx red'), line = el('div', 'apx line');
     var show = function (style) {
       clear(); current = style;
-      lock.hidden = style !== 'lock'; kara.remove(); apx.remove();
+      lock.hidden = style !== 'lock'; kara.remove(); apx.remove(); line.remove();
       demo.querySelector('.zone').hidden = style !== 'lock';
       if (style === 'lock') { playLock(lock, 0, true); }
       if (style === 'kara') { demo.appendChild(kara); playKara(kara, 0, true); }
-      if (style === 'apx') { demo.appendChild(apx); playApx(apx, 0, true); }
+      if (style === 'line') { demo.appendChild(line); playShort(line, 0, true); }
+      if (style === 'apx') { demo.appendChild(apx); playShort(apx, 0, true); }
       demo.querySelectorAll('.tag button').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-style') === style ? 'true' : 'false'); });
       startMinis();
     };
@@ -91,7 +96,8 @@
       var kind = m.getAttribute('data-mini');
       if (kind === 'lock') { playLock(m, 1, true); }
       if (kind === 'kara') { playKara(m, 1, true); }
-      if (kind === 'apx') { playApx(m, 0, true); }
+      if (kind === 'line') { playShort(m, 2, true); }
+      if (kind === 'apx') { playShort(m, 0, true); }
     });
   }
   if (!demo) { startMinis(); }

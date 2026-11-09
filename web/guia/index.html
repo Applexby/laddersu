@@ -37,7 +37,6 @@
     <a href="#previa">Vista previa</a>
     <a href="#generar">Generar</a>
     <a href="#biblioteca">Biblioteca</a>
-    <a href="#reel">Paquetes de reel</a>
     <a href="#actualizar">Actualizar</a>
     <a href="#atajos">Atajos</a>
     <a href="#problemas">Si algo falla</a>
@@ -55,6 +54,7 @@
         <li>Cierra y vuelve a abrir After Effects (2024, 2025 o 2026).</li>
         <li>Abre <b>Ventana › Extensiones › Laddersu</b>.</li>
       </ol>
+      <p>El instalador también deja la app <b>Laddersu</b> en tu escritorio: sirve para actualizar.</p>
       <p>Si tenías <b>Escalera Subs</b>, el instalador lo reemplaza. Tus bibliotecas y plantillas guardadas se conservan.</p>
     </section>
 
@@ -101,8 +101,11 @@
       <p>Bloques con tamaños S, M y L, palabra clave en color y patrones variados (centro, escalera, zigzag, izquierda, derecha).</p>
       <h3>Caja que recorre</h3>
       <p>La frase completa en orden y una caja que pasa de palabra en palabra según los tiempos del SRT.</p>
-      <h3>Una línea (APPLEXBY)</h3>
-      <p>Una sola línea centrada en el tercio inferior que aparece palabra por palabra con desenfoque; la palabra clave va en rojo.</p>
+      <h3>Una línea</h3>
+      <p>Frases cortas en una sola línea en el tercio inferior. Cada palabra entra con la animación de la edición.</p>
+      <h3>APPLEXBY</h3>
+      <p>Frases cortas en rojo y minúsculas, con las letras y las palabras muy juntas, contorno blanco y sombra suave. Cada palabra entra con desenfoque. Juntar letras, espacio entre palabras, contorno y colores se ajustan en Ajustes.</p>
+      <p>Con <b>Una línea</b> y <b>APPLEXBY</b> el SRT se agrupa en frases de 1, 2 o 3 palabras (<b>Ajustes › Palabras por frase</b>), sin dejar una palabra como “de” o “el” sola al final. Al cambiar entre estos estilos y la escalera o la caja, las frases se rearman solas; puedes deshacerlo.</p>
     </section>
 
     <section id="previa">
@@ -120,21 +123,17 @@
       <h2>Biblioteca</h2>
       <h3>Composiciones</h3>
       <p>Abre una composición (o selecciona capas: se precomponen) y pulsa <b>Guardar composición</b>. Se guarda con sus precomposiciones y los archivos que usa. En otro proyecto, <b>Insertar</b> la añade como capa en el tiempo actual y <b>Abrir</b> la deja lista para editar. Tu proyecto debe estar guardado al menos una vez.</p>
+      <p><b>Grupos</b>: pulsa <b>+ Grupo</b> para crear uno (por ejemplo Idealo o APPLEXBY). Mueve una composición con su botón de etiqueta o arrastrándola sobre el nombre del grupo, o elige el grupo al guardarla. Al borrar un grupo, sus composiciones pasan a Sin grupo.</p>
       <h3>Plantillas de texto</h3>
       <p>Capas de texto y formas que reciben las palabras del SRT. Se aplican con clic derecho › Plantilla de texto.</p>
       <h3>Sonidos</h3>
       <p>Efectos incluidos y los tuyos: guarda tus <code>.wav</code> o <code>.mp3</code> en la carpeta <code>sounds\user</code> del panel o impórtalos desde la pestaña Sonidos. Las actualizaciones no tocan esa carpeta.</p>
     </section>
 
-    <section id="reel">
-      <h2>Paquetes de reel</h2>
-      <p>La pestaña <b>Reel</b> importa un paquete <code>.applexby.json</code> con la voz, el SRT y el plan de planos, y arma el timeline: planos desde tu kit de plantillas, subtítulos, textos de impacto, sonidos y marcadores. Antes de construir muestra un resumen con avisos (planos largos, anclas no encontradas, archivos que faltan) para aceptar o cancelar.</p>
-    </section>
-
     <section id="actualizar">
       <h2>Actualizar</h2>
-      <p>Abre <b>Ventana › Extensiones › Laddersu · Actualizaciones</b>. Compara tu versión con la última publicada y la instala con un clic; luego pulsa <b>Recargar paneles</b>. Puedes dejar activado <b>Instalar automáticamente</b>.</p>
-      <p>También puedes descargar el instalador de nuevo: se instala encima, sin desinstalar.</p>
+      <p>Abre la app <b>Laddersu</b> de tu escritorio (o del menú Inicio). Te dice si tienes la última versión; si hay una nueva, pulsa <b>Actualizar</b>. Se descarga, se instala sola y luego reinicias After Effects.</p>
+      <p>El panel también avisa cuando hay una versión nueva. También puedes descargar el instalador de nuevo: se instala encima, sin desinstalar.</p>
     </section>
 
     <section id="atajos">
@@ -158,7 +157,7 @@
         <li><b>No aparece en Ventana › Extensiones</b>: cierra After Effects por completo y vuelve a abrirlo. Si sigue sin aparecer, ejecuta el instalador otra vez.</li>
         <li><b>Mensaje de error al generar</b>: el panel muestra el error de After Effects con su número de línea en <b>Registro</b>. Cópialo al reportarlo.</li>
         <li><b>Una fuente no se aplica</b>: comprueba que esté instalada en Windows; si no, After Effects usa la predeterminada y lo avisa.</li>
-        <li><b>El actualizador dice que GitHub limitó las consultas</b>: espera unos minutos y vuelve a intentarlo.</li>
+        <li><b>La app no puede revisar</b>: comprueba tu conexión a internet y pulsa <b>Buscar de nuevo</b>.</li>
       </ul>
     </section>
   </article>
@@ -167,7 +166,7 @@
 <footer class="foot">
   <div class="wrap">
     <span class="logo"><span class="mark" aria-hidden="true"></span>Laddersu</span>
-    <span>Hecho por Idealo Films</span>
+    <span>Hecho por Applexby</span>
     <span class="r"><a href="/">Inicio</a><a href="https://github.com/Applexby/laddersu/releases">Versiones</a><a href="https://github.com/Applexby/laddersu">Código</a></span>
   </div>
 </footer>

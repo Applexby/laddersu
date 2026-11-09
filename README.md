@@ -11,7 +11,8 @@ bibliotecas de composiciones y plantillas, sonidos por palabra y actualizaciones
 
 | Carpeta | Qué hay |
 |---|---|
-| `extension/` | El paquete CEP que se instala en After Effects: panel **Laddersu** y panel **Laddersu · Actualizaciones** |
+| `extension/` | El paquete CEP que se instala en After Effects: el panel **Laddersu** |
+| `app/` | App de escritorio **Laddersu** (C#, .NET Framework 4.5+) para buscar e instalar actualizaciones |
 | `installer/` | Instalador de Inno Setup (`laddersu.iss`) |
 | `web/` | Sitio estático de descarga y guía (Vercel, sin compilación) |
 | `tests/` | Pruebas en Node (no necesitan After Effects) |
@@ -27,7 +28,7 @@ bibliotecas de composiciones y plantillas, sonidos por palabra y actualizaciones
 3. Sube el cambio a `main`. Al cambiar `extension/version.json` se publica sola (también sirve subir la etiqueta
    `v0.6.1`, o lanzar el flujo a mano desde la pestaña Actions).
 
-GitHub Actions corre las pruebas, arma `laddersu-panel-x.y.z.zip`, compila `Laddersu-Setup.exe` y publica todo con un
+GitHub Actions corre las pruebas (también las de la app), compila la app `Laddersu.exe`, arma `laddersu-panel-x.y.z.zip`, compila `Laddersu-Setup.exe` y publica todo con un
 `latest.json` (versión y huellas SHA-256). El panel de actualizaciones lee esa publicación. No hace falta ningún secreto:
 el repositorio es público y el flujo usa el permiso propio de GitHub Actions.
 
@@ -43,11 +44,14 @@ La prueba de interfaz (`python3 tests/ui_test.py`) abre el panel en Chromium con
 
 Las pruebas usan un After Effects simulado (`tests/fakeae.js`). Esto queda para probar a mano:
 
-- **Estilo APPLEXBY:** que la fuente (por defecto `Archivo-Bold`) esté instalada y se aplique; que la línea quede
-  centrada a la altura elegida y que el corte en dos líneas se vea equilibrado con la fuente real.
+- **Estilo APPLEXBY:** que la fuente (por defecto `Archivo-Bold`) esté instalada y se aplique; el tracking (-60), el
+  contorno blanco detrás del relleno y la separación entre palabras con la fuente real.
+- **Una línea:** que entre con la animación de la edición y que el corte en dos líneas se vea equilibrado.
 - **Entrada y salida por desenfoque:** curva de la animación y que el desenfoque llegue a 0.
 - **Ocultar durante T2:** la expresión de opacidad en las capas de subtítulos (fundido de 0,12 s).
 - **Sombra suave:** el efecto Sombra paralela con los valores del panel.
 - **Sonidos propios:** que los .wav/.mp3 de `sounds/user` se importen y se coloquen en su tiempo.
-- **Actualizador:** descarga, verificación SHA-256, descompresión con PowerShell y "Recargar paneles".
-- **Instalador:** que reemplace Escalera Subs y que el panel aparezca en Ventana › Extensiones.
+- **Grupos de la biblioteca:** `groups.json` y `meta.json` en la carpeta real de la biblioteca.
+- **App Laddersu:** aspecto en Windows (se probó en Mono/Linux), descarga, instalación silenciosa y que se vuelva a abrir.
+- **Instalador:** que reemplace Escalera Subs, quite el panel viejo de actualizaciones, cree el acceso directo del
+  escritorio y que el panel aparezca en Ventana › Extensiones.

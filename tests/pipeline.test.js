@@ -225,6 +225,18 @@ console.log(n + ' pruebas de punta a punta OK');
     // renombrar y borrar
     assert(JSON.parse(s.h.call('ES_libRename', JSON.stringify({ id: r.id, name: 'Promo final' }))).ok);
     assert.strictEqual(JSON.parse(s.h.call('ES_libList')).items[0].name, 'Promo final');
+    // grupos: crear, asignar, borrar el grupo -> el elemento pasa a "Sin grupo"
+    assert.deepStrictEqual(JSON.parse(s.h.call('ES_libList')).groups, []);
+    assert(JSON.parse(s.h.call('ES_libGroupsSave', JSON.stringify({ groups: [{ id: 'g1', name: 'Idealo' }, { id: 'g2', name: 'APPLEXBY' }] }))).ok);
+    assert(JSON.parse(s.h.call('ES_libSetGroup', JSON.stringify({ ids: [r.id], group: 'g2' }))).ok);
+    var lg = JSON.parse(s.h.call('ES_libList'));
+    assert.strictEqual(lg.groups.length, 2); assert.strictEqual(lg.groups[1].name, 'APPLEXBY'); assert.strictEqual(lg.items[0].group, 'g2');
+    var mv = JSON.parse(s.h.call('ES_libGroupsSave', JSON.stringify({ groups: [{ id: 'g1', name: 'Idealo' }] })));
+    assert.strictEqual(mv.moved, 1);
+    assert.strictEqual(JSON.parse(s.h.call('ES_libList')).items[0].group, '');
+    var r3 = JSON.parse(s.h.call('ES_libSave', JSON.stringify({ name: 'Intro', mode: 'comp', group: 'g1' })));
+    assert(r3.ok); assert.strictEqual(JSON.parse(s.h.call('ES_libList')).items.filter(function (x) { return x.id === r3.id; })[0].group, 'g1', 'guardar directo en un grupo');
+    assert(JSON.parse(s.h.call('ES_libDelete', r3.id)).ok);
     assert(JSON.parse(s.h.call('ES_libDelete', r.id)).ok);
     assert.strictEqual(JSON.parse(s.h.call('ES_libList')).items.length, 0);
   });
@@ -258,9 +270,12 @@ console.log(n + ' pruebas de punta a punta OK');
     assert(uniq.length <= 2, 'una o dos lineas');
     tl.forEach(function (l) { assert(pos(l)[1] > 1920 * 0.6 && pos(l)[1] < 1920 * 0.76, 'tercio inferior: ' + pos(l)[1]); });
     var byText = {}; tl.forEach(function (l) { byText[l.td.text] = l; });
-    words.forEach(function (w) { var l = byText[w.text]; assert(l, 'capa ' + w.text); assert(Math.abs(l.inPoint - w.start) < 1e-6, 'entra con su palabra'); });
-    var key = byText[words[1].text];
-    assert.strictEqual(JSON.stringify(key.td.fillColor.map(function (x) { return Math.round(x * 255); })), JSON.stringify([255, 1, 1]), 'palabra clave en rojo');
+    words.forEach(function (w) { var l = byText[w.text.toLowerCase()]; assert(l, 'capa en minusculas ' + w.text); assert(Math.abs(l.inPoint - w.start) < 1e-6, 'entra con su palabra'); });
+    var key = byText[words[1].text.toLowerCase()];
+    assert.strictEqual(JSON.stringify(key.td.fillColor.map(function (x) { return Math.round(x * 255); })), JSON.stringify([255, 26, 26]), 'rojo');
+    assert.strictEqual(key.td.tracking, -60, 'letras juntas');
+    assert(key.td.applyStroke === true && key.td.strokeOverFill === false && key.td.strokeWidth > 0, 'contorno blanco detras del relleno');
+    assert.strictEqual(JSON.stringify(key.td.strokeColor), JSON.stringify([1, 1, 1]));
     assert.strictEqual(key.td.fontSize, 64, 'mismo tamano que las demas');
     var any = tl[0], op = any.property('ADBE Transform Group').property('ADBE Opacity');
     assert(op.numKeys === 4 || op.numKeys === 2, 'entrada (y salida si cabe)');
@@ -268,6 +283,21 @@ console.log(n + ' pruebas de punta a punta OK');
     assert(blur && blur.property('ADBE Gaussian Blur 2-0001').keys[0].v === 20, 'desenfoque 20 -> 0');
     assert(any.property('ADBE Effect Parade').property('ADBE Drop Shadow'), 'sombra suave');
     assert(Math.abs(blur.property('ADBE Gaussian Blur 2-0001').keys[1].t - (any.inPoint + 0.3)) < 1e-6, 'dura 0,30 s');
+  });
+  t('APPLEXBY: palabras mas juntas que en Una linea', function () {
+    function gapOf(style) {
+      var s = setup(), st = fresh(); st.seqs[0].style = style;
+      run(s.h, JSON.stringify(M.buildJob(st, S0, { only: [0] })));
+      var tl = textLayers(s.comp).filter(function (l) { return Math.abs(pos(l)[1] - pos(textLayers(s.comp)[0])[1]) < 1; });
+      tl.sort(function (a, b) { return pos(a)[0] - pos(b)[0]; });
+      return { n: tl.length, x: tl.map(function (l) { return pos(l)[0]; }), tl: tl };
+    }
+    var a = gapOf('applexby'), l = gapOf('line');
+    assert(a.n >= 2 && l.n >= 2);
+    assert(a.x[1] - a.x[0] < l.x[1] - l.x[0], 'APPLEXBY mas apretado');
+    var lt = l.tl[0];
+    assert.strictEqual(lt.td.applyStroke, false, 'Una linea sin contorno'); assert.strictEqual(lt.td.tracking || 0, 0);
+    assert.strictEqual(JSON.stringify(lt.td.fillColor), JSON.stringify([1, 1, 1]), 'Una linea en blanco');
   });
   t('ocultar durante T2: los subtitulos que coinciden con un T2 llevan la expresion; el T2 no', function () {
     var s = setup(), st = fresh(), store = P.createStore({}); store.load();
