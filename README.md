@@ -24,7 +24,8 @@ bibliotecas de composiciones y plantillas, sonidos por palabra y actualizaciones
    `ES.VERSION` en `extension/jsx/engine.js` y `ES_VERSION` en `extension/jsx/host.jsx`
    (`node tools/check-version.js` comprueba que coincidan).
 2. Escribe sus novedades en `CHANGELOG.md` bajo `## [x.y.z]`.
-3. Crea la etiqueta y súbela: `git tag v0.6.1 && git push origin v0.6.1`.
+3. Sube el cambio a `main`. Al cambiar `extension/version.json` se publica sola (también sirve subir la etiqueta
+   `v0.6.1`, o lanzar el flujo a mano desde la pestaña Actions).
 
 GitHub Actions corre las pruebas, arma `laddersu-panel-x.y.z.zip`, compila `Laddersu-Setup.exe` y publica todo con un
 `latest.json` (versión y huellas SHA-256). El panel de actualizaciones lee esa publicación. No hace falta ningún secreto:
