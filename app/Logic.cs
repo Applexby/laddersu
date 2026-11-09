@@ -23,8 +23,17 @@ namespace Laddersu
         public string ExeName = "";
     }
 
+    public class ReleaseNote
+    {
+        public string Version = "";
+        public DateTime Date;
+        public string Body = "";
+    }
+
     public static class Logic
     {
+        public const string WebUrl = "https://laddersu.vercel.app";
+        public const string ReleasesApi = "https://api.github.com/repos/Applexby/laddersu/releases?per_page=12";
         public const string Repo = "Applexby/laddersu";
         public const string LatestJson = "https://github.com/" + Repo + "/releases/latest/download/latest.json";
         public const string ReleasesPage = "https://github.com/" + Repo + "/releases";
@@ -99,6 +108,66 @@ namespace Laddersu
                 sb.Append(l).Append("\r\n");
             }
             return sb.ToString().TrimEnd();
+        }
+
+        // lista de versiones publicadas (API de GitHub), de la mas nueva a la mas vieja
+        public static List<ReleaseNote> ParseReleases(string json)
+        {
+            var list = new List<ReleaseNote>();
+            var arr = new JavaScriptSerializer().Deserialize<object[]>(json);
+            if (arr == null) { return list; }
+            foreach (var o in arr)
+            {
+                var d = o as Dictionary<string, object>;
+                if (d == null) { continue; }
+                if (d.ContainsKey("draft") && d["draft"] is bool && (bool)d["draft"]) { continue; }
+                if (d.ContainsKey("prerelease") && d["prerelease"] is bool && (bool)d["prerelease"]) { continue; }
+                var r = new ReleaseNote();
+                r.Version = Clean(d.ContainsKey("tag_name") ? Convert.ToString(d["tag_name"]) : "");
+                r.Body = d.ContainsKey("body") ? Convert.ToString(d["body"]) : "";
+                DateTime dt;
+                if (d.ContainsKey("published_at") && DateTime.TryParse(Convert.ToString(d["published_at"]), System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out dt)) { r.Date = dt; }
+                if (r.Version != "") { list.Add(r); }
+            }
+            list.Sort((a, b) => Compare(b.Version, a.Version));
+            return list;
+        }
+
+        public static async Task<List<ReleaseNote>> FetchReleases()
+        {
+            EnableTls();
+            using (var w = Client())
+            {
+                w.Headers[HttpRequestHeader.Accept] = "application/vnd.github+json";
+                return ParseReleases(await w.DownloadStringTaskAsync(new Uri(ReleasesApi)));
+            }
+        }
+
+        // "- **Nuevo** estilo" -> [("Nuevo", negrita), (" estilo", normal)]
+        public static List<KeyValuePair<string, bool>> Runs(string line)
+        {
+            var o = new List<KeyValuePair<string, bool>>();
+            var parts = (line ?? "").Replace("`", "").Split(new[] { "**" }, StringSplitOptions.None);
+            for (int i = 0; i < parts.Length; i++) { if (parts[i] != "") { o.Add(new KeyValuePair<string, bool>(parts[i], i % 2 == 1)); } }
+            return o;
+        }
+
+        public static List<string> Bullets(string md)
+        {
+            var o = new List<string>();
+            foreach (var raw in (md ?? "").Replace("\r", "").Split('\n'))
+            {
+                string l = raw.Trim();
+                if (Regex.IsMatch(l, @"^[-*]\s+")) { o.Add(Regex.Replace(l, @"^[-*]\s+", "")); }
+            }
+            return o;
+        }
+
+        public static string SpanishDate(DateTime d)
+        {
+            if (d == DateTime.MinValue) { return ""; }
+            string[] m = { "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" };
+            return d.Day + " de " + m[d.Month - 1] + " de " + d.Year;
         }
 
         public static string Sha256File(string path)

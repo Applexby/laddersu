@@ -263,3 +263,68 @@ console.log(n + ' pruebas de modelo OK');
   assert(a >= b, '1 palabra por frase no da menos frases (' + a + ' vs ' + b + ')');
   console.log('reagrupar conserva las plantillas OK');
 })();
+(function () {
+  // v0.7: paso Texto (unir, separar, reemplazar, parrafos)
+  var E = ES.parseSRT(require('fs').readFileSync(__dirname + '/sample.srt', 'utf8'));
+  var S = M.defaults(), st = M.fromEntries(E, S), ids = M.allIds(st);
+  var n0 = ids.length;
+  assert(M.joinWords(st, ids[0]), 'unir con la siguiente');
+  assert.strictEqual(M.find(st, ids[0]).w.text, 'Como seria');
+  assert.strictEqual(M.allIds(st).length, n0 - 1);
+  assert(M.splitWord(st, ids[0]), 'separar');
+  assert.strictEqual(M.allIds(st).length, n0);
+  assert.strictEqual(M.find(st, ids[0]).w.text, 'Como');
+  assert(!M.splitWord(st, ids[0]), 'una sola palabra no se separa');
+  // la ultima palabra de una frase se une con la primera de la siguiente
+  var lastOf0 = st.seqs[0].words[st.seqs[0].words.length - 1].id, n1 = st.seqs.length;
+  assert(M.joinWords(st, lastOf0));
+  assert.strictEqual(M.allIds(st).length, n0 - 1); assert(st.seqs.length <= n1);
+  // reemplazar
+  var st2 = M.fromEntries(E, S);
+  assert.strictEqual(M.replaceAll(st2, 'ingles', 'inglés'), 1, 'palabra completa, conserva la puntuacion');
+  var all = []; st2.seqs.forEach(function (q) { q.words.forEach(function (w) { all.push(w.text); }); });
+  assert(all.indexOf('inglés?') >= 0, all.join(' '));
+  assert.strictEqual(M.replaceAll(st2, 'seri', 'X'), 0, 'solo palabras completas ("seri" no toca "seria" ni "Series")');
+  assert.strictEqual(M.replaceAll(st2, 'seri', 'X', { partial: true }), 2, 'parcial si se pide');
+  assert.strictEqual(M.replaceAll(st2, 'peliculas', 'pelis y series'), 1);
+  var t2 = []; st2.seqs.forEach(function (q) { q.words.forEach(function (w) { t2.push(w.text); }); });
+  assert(t2.join(' ').indexOf('pelis y series') >= 0, 'con espacios se divide en palabras');
+  assert.strictEqual(M.replaceAll(st2, '', 'x'), 0);
+  // parrafos
+  var ps = M.paragraphs(M.fromEntries(E, S));
+  assert(ps.length >= 2 && ps[0].words[0].text === 'Como', 'parrafos tras pausas o fin de oracion');
+  console.log('paso Texto: unir, separar, reemplazar y parrafos OK');
+})();
+(function () {
+  // v0.7: largos por estilo, reagrupar un tramo con otro estilo, frases cambiadas
+  var E = ES.parseSRT(require('fs').readFileSync(__dirname + '/sample.srt', 'utf8'));
+  var S = M.defaults();
+  S.stairLen = 0; var shortS = M.fromEntries(E, S).seqs.length;
+  S.stairLen = 2; var longS = M.fromEntries(E, S).seqs.length;
+  assert(shortS >= longS, 'bloques cortos dan mas frases');
+  S = M.defaults(); S.editStyle = 'karaoke';
+  var kst = M.fromEntries(E, S); assert(kst.seqs.every(function (q) { return q.style === ''; }), 'la base no se marca por frase');
+  S = M.defaults();
+  var st = M.fromEntries(E, S), n = st.seqs.length, words = M.allIds(st).length;
+  M.regroupRange(st, [1, 2], 'line', S);
+  assert(st.seqs.length > n, 'el tramo pasa a frases cortas');
+  assert.strictEqual(M.allIds(st).length, words, 'no se pierden palabras');
+  assert.strictEqual(st.seqs[0].style, '', 'la primera sigue con la base');
+  assert.strictEqual(st.seqs[1].style, 'line');
+  assert.strictEqual(st.seqs[st.seqs.length - 1].style, '', 'la ultima no se toco');
+  for (var i = 1; i < st.seqs.length; i++) { assert(st.seqs[i].start >= st.seqs[i - 1].start, 'en orden'); }
+  // frases cambiadas
+  assert.strictEqual(M.changedSeqs(st, S), null, 'nunca generado: todo');
+  M.markGenerated(st, S);
+  assert.deepStrictEqual(M.changedSeqs(st, S), []);
+  st.seqs[2].words[0].c.color = '#ff0000';
+  assert.deepStrictEqual(M.changedSeqs(st, S), [2]);
+  M.markGenerated(st, S);
+  st.seqs[0].style = 'karaoke';
+  assert.deepStrictEqual(M.changedSeqs(st, S), [0], 'cambiar el estilo de una frase');
+  M.markGenerated(st, S);
+  S.szL = 99; assert.strictEqual(M.changedSeqs(st, S), null, 'cambiar ajustes: todo');
+  S.szL = 85; M.markGenerated(st, S);
+  M.merge(st, 0); assert.strictEqual(M.changedSeqs(st, S), null, 'si desaparece una frase generada: todo');
+  console.log('largos por estilo, reagrupar un tramo y frases cambiadas OK');
+})();

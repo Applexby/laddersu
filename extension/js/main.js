@@ -32,7 +32,7 @@
   var sel = Model.newSel();
   var S = Model.defaults();
   var fonts = [], fontsState = 'loading';
-  var ui = { tab: 'editor', lib: 'comp', sndCat: 'Todos', drag: null };
+  var ui = { tab: 'editor', step: 'texto', lib: 'comp', sndCat: 'Todos', drag: null, fsel: {}, inspTab: 'anim', genOnly: true, gen: null };
   var sounds = [];
   var EXT = '';
   var history = [];
@@ -43,7 +43,7 @@
   function say(text, cls, id) {
     if (!id) { toast(text, cls); logLine(text, cls); return; }
     var el = $(id); el.textContent = text || ''; el.className = 'msg' + (cls ? ' ' + cls : '');
-    if (text && id === 'msgApply') { logLine(text, cls); }
+
   }
   var toastTimer = 0;
   function toast(text, cls) {
@@ -55,17 +55,15 @@
       u.addEventListener('click', function () { undo(); t.hidden = true; });
       t.appendChild(u);
     }
-    var foot = $('app').querySelector('.foot'), bar = $('selBar');
-    t.style.bottom = (foot.offsetHeight + 12 + (bar.hidden ? 0 : bar.offsetHeight + 8)) + 'px';
+    var foot = $('foot');
+    t.style.bottom = ((foot.hidden ? 0 : foot.offsetHeight) + 12) + 'px';
     t.hidden = false; clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.hidden = true; }, cls === 'err' ? 5200 : 3200);
   }
   function logLine(text, cls) {
     var d = new Date(), t = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2);
     logs.push({ t: t, m: text, c: cls || '' }); if (logs.length > 80) { logs.shift(); }
-    var ol = $('logBox'); ol.innerHTML = '';
-    logs.forEach(function (l) { ol.appendChild(h('li', l.c, l.t + '  ' + l.m)); });
-    ol.scrollTop = ol.scrollHeight;
+
   }
   window.__ES_log = logs;
 
@@ -179,40 +177,22 @@
     return a;
   }
 
-  // cambiar el estilo de la edicion: si pasa de bloque (escalera/caja) a una linea o al reves, se rearman las frases
-  function setEditStyle(style) {
-    var f0 = Model.groupFamily(S.editStyle), f1 = Model.groupFamily(style);
-    S.editStyle = style; saveCfg();
-    if (f0 !== f1 && st.seqs.length) {
-      mutate(function () { Model.regroup(st, S); });
-      say((f1 === 'line' ? 'Frases cortas para una línea: ' : 'Frases rearmadas: ') + st.seqs.length + ' frases.', 'ok');
-    } else { render(); }
-    renderSettings();
-  }
-  function regroupLines() {
-    if (!ES.isLineStyle(S.editStyle) || !st.seqs.length) { return; }
-    mutate(function () { Model.regroup(st, S); });
-    say('Frases de ' + S.lineWords + (S.lineWords === 1 ? ' palabra: ' : ' palabras: ') + st.seqs.length + ' frases.', 'ok');
-  }
-
   function renderSettings() {
     var body = $('settingsBody'); body.innerHTML = '';
     var c, row;
 
-    c = card('stair', 'Estilo de la edición', 'Cómo se arma cada frase. Cada frase puede cambiarlo con clic derecho ▸ Estilo de la frase.');
-    row = h('div', 'styleChoice');
-    [['lockup', 'Escalera', 'Bloque con tamaños, ★ y patrones'], ['karaoke', 'Caja que recorre', 'Frase entera y una caja que pasa de palabra en palabra'],
-     ['line', 'Una línea', 'Frases cortas en una línea, con la animación de la edición'],
-     ['applexby', 'APPLEXBY', 'Frases cortas en rojo, letras juntas, entran con desenfoque']].forEach(function (o) {
-      var b = h('button', 'styleBtn' + (S.editStyle === o[0] ? ' on' : '')); b.type = 'button'; b.setAttribute('aria-pressed', S.editStyle === o[0] ? 'true' : 'false');
-      b.appendChild(styleArt(o[0])); b.appendChild(h('b', '', o[1])); b.appendChild(h('small', '', o[2]));
-      b.addEventListener('click', function () { setEditStyle(o[0]); });
+    var LS = ui.lookStyle || (ES.isLineStyle(S.editStyle) || S.editStyle === 'karaoke' ? S.editStyle : 'lockup');
+    c = card('stair', 'Aspecto de los estilos', 'Cómo se ve cada estilo. Qué frases usan cada uno se decide en el paso Frases.');
+    c.id = 'lookCard';
+    row = h('div', 'segc lookSeg'); row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Estilo');
+    [['lockup', 'Escalera'], ['karaoke', 'Caja'], ['line', 'Una línea'], ['applexby', 'APPLEXBY']].forEach(function (o) {
+      var b = h('button', LS === o[0] ? 'on' : '', o[1]); b.type = 'button'; b.setAttribute('data-v', o[0]); b.setAttribute('aria-pressed', LS === o[0] ? 'true' : 'false');
+      b.addEventListener('click', function () { ui.lookStyle = o[0]; renderSettings(); });
       row.appendChild(b);
     });
     c.appendChild(row);
-    if (S.editStyle === 'applexby' || S.editStyle === 'line') {
-      var ax = S.editStyle === 'applexby', P = ax ? 'apx' : 'lin';
-      c.appendChild(fld('Palabras por frase', segc('lineWords', [[1, '1'], [2, '2'], [3, '3']], regroupLines), 'Al cambiarlo se rearman las frases (con Deshacer).'));
+    if (LS === 'applexby' || LS === 'line') {
+      var ax = LS === 'applexby', P = ax ? 'apx' : 'lin';
       c.appendChild(fld('Fuente (nombre PostScript)', apxFontIn(P + 'Font', ax ? '' : 'La de la edición')));
       c.appendChild(fld('Tamaño', slider(P + 'Size', 30, 140, 1, ' px')));
       c.appendChild(fld('Altura en el video', slider(P + 'CenterY', 50, 90, 1, '%')));
@@ -232,7 +212,7 @@
       c.appendChild(fld('Salida al terminar la frase', toggle(P + 'Exit'), 'Apagada: las palabras solo tienen entrada y desaparecen al cortar.'));
       c.appendChild(h('p', 'secNote', ax ? 'Cada palabra entra con desenfoque y transparencia (0,30 s), sin salida. Si una frase no cabe en una línea se parte en dos, nunca en tres.'
         : 'Cada palabra entra con la animación de la edición (Ajustes ▸ Animación). Si no cabe en una línea se parte en dos, nunca en tres.'));
-    } else if (S.editStyle === 'karaoke') {
+    } else if (LS === 'karaoke') {
       c.appendChild(fld('Tamaño de las palabras', segc('karSize', [['S', 'S'], ['M', 'M'], ['L', 'L']])));
       c.appendChild(fld('Color de la caja', colorIn('karBox')));
       c.appendChild(fld('Tiempo del cambio', slider('karMove', 0.04, 0.4, 0.02, ' s')));
@@ -365,11 +345,13 @@
     if (!hasAE()) { return; }
     evalAE('typeof ES_compInfo==="function" ? ES_compInfo() : "{}"', function (r) {
       var b = $('compBadge'), o = parseJSON(r);
+      var prev = ui.comp ? JSON.stringify(ui.comp) : '';
       if (o && o.ok) {
         b.textContent = o.name + ' · ' + o.w + '×' + o.h; b.title = o.name + ' · ' + o.w + '×' + o.h + ' · ' + Math.round(o.fps) + ' fps'; b.className = 'comp ok';
-        if (!ui.comp || ui.comp.w !== o.w || ui.comp.h !== o.h) { ui.comp = { w: o.w, h: o.h }; drawPreview(); }
+        ui.comp = { ok: true, name: o.name, w: o.w, h: o.h, fps: o.fps };
       }
-      else { b.textContent = 'sin composición activa'; b.className = 'comp'; }
+      else { b.textContent = 'sin composición activa'; b.className = 'comp'; ui.comp = ui.comp ? { ok: false, w: ui.comp.w, h: ui.comp.h } : { ok: false }; }
+      if (JSON.stringify(ui.comp) !== prev) { if (ui.step === 'diseno') { drawPreview(); } if (ui.step === 'generar' && !gen) { renderGenerar(); } }
     });
   }
 
@@ -1009,49 +991,28 @@
   }
 
   function render() {
-    var box = $('seqs'), si, act = activeSi();
-    box.innerHTML = '';
-    $('empty').hidden = st.seqs.length > 0;
-    for (si = 0; si < st.seqs.length; si++) {
-      (function (seq, i) {
-        box.appendChild(gapEl(i));
-        var row = h('div', 'seq' + (seq.pres ? ' pres' : '') + (i === act ? ' active' : '')); row.setAttribute('data-si', i);
-        var allOn = seq.words.every(function (w) { return Model.isSel(sel, w.id); });
-        var lead = h('div', 'lead');
-        var num = h('button', 'num', String(i + 1)); num.type = 'button'; num.title = 'Elegir toda la frase ' + (i + 1); num.setAttribute('aria-pressed', allOn ? 'true' : 'false');
-        num.addEventListener('click', function (ev) { Model.selectSeq(st, sel, i, ev.ctrlKey || ev.metaKey || ev.shiftKey); setActiveSeq(i); render(); });
-        num.addEventListener('contextmenu', function (ev) { ev.preventDefault(); Model.selectSeq(st, sel, i, false); setActiveSeq(i); render(); openMenu(ev.clientX, ev.clientY, {}); });
-        lead.appendChild(num); lead.appendChild(h('span', 'tc', fmtTime(seq.start)));
-        row.appendChild(lead);
-        var chips = h('div', 'chips');
-        seq.words.forEach(function (w) { chips.appendChild(chipEl(w, seq)); });
-        chips.addEventListener('dragover', function (ev) { if (!ui.drag) { return; } ev.preventDefault(); clearDropMarks(); row.classList.add('dropHere'); ui.dropInfo = { seq: seq, before: null }; });
-        chips.addEventListener('drop', function (ev) { ev.preventDefault(); doDrop(); });
-        row.appendChild(chips);
-        var tools = h('div', 'rowTools');
-        var stl = seq.style || S.editStyle;
-        if (seq.pres) {
-          var d = pstore.get(seq.pres), tag = h('span', 'presTag', d ? d.name : 'Plantilla'); tag.title = d ? 'Plantilla de texto: ' + d.name : 'La plantilla ya no está en la biblioteca';
-          tools.appendChild(tag);
-        } else {
-          var ab = h('button', 'alignBtn' + (seq.align || seq.style ? ' set' : '')); ab.type = 'button'; ab.appendChild(icon(stl === 'karaoke' ? 'karaoke' : (ES.isLineStyle(stl) ? 'line' : 'stair')));
-          ab.title = 'Estilo de la frase: ' + (stl === 'karaoke' ? 'caja que recorre' : (stl === 'applexby' ? 'APPLEXBY' : stl === 'line' ? 'una línea' : 'escalera, ' + ALIGN_NAME[seq.align || ''].toLowerCase()));
-          ab.setAttribute('aria-label', ab.title);
-          ab.addEventListener('click', function (ev) {
-            Model.selectSeq(st, sel, i, false); setActiveSeq(i); render();
-            var r = ev.currentTarget.getBoundingClientRect ? ev.currentTarget.getBoundingClientRect() : null;
-            var el = document.querySelector('.seq[data-si="' + i + '"] .alignBtn'); r = el ? el.getBoundingClientRect() : r;
-            openMenu(Math.max(6, r.left - 200), r.bottom + 4, { sub: 'seqstyle' });
-          });
-          tools.appendChild(ab);
-        }
-        row.appendChild(tools);
-        box.appendChild(row);
-      })(st.seqs[si], si);
-    }
-    if (st.seqs.length) { box.appendChild(gapEl(st.seqs.length)); }
-    renderSelBar(); updateButtons(); drawPreview();
+    if (!st.seqs.length && ui.step !== 'texto') { ui.step = 'texto'; }
+    renderStepper();
+    if (ui.step === 'texto') { renderTexto(); }
+    else if (ui.step === 'frases') { renderFrases(); }
+    else if (ui.step === 'diseno') { renderDiseno(); }
+    else if (ui.step === 'generar') { renderGenerar(); }
+    updateButtons();
     if (ui.tab === 'library') { if (ui.lib === 'snd') { renderSounds(); } else if (ui.lib === 'pres') { renderPres(); } }
+  }
+  // paso 3: solo las palabras de la frase activa (la de la vista previa) + el panel de ajustes
+  function renderDiseno() {
+    var box = $('seqs'), act = activeSi();
+    box.innerHTML = '';
+    if (act >= 0) {
+      var seq = st.seqs[act], row = h('div', 'seq active' + (seq.pres ? ' pres' : '')); row.setAttribute('data-si', act);
+      var chips = h('div', 'chips');
+      seq.words.forEach(function (w) { var c = chipEl(w, seq); c.draggable = false; chips.appendChild(c); });
+      row.appendChild(chips);
+      if (seq.pres) { var d = pstore.get(seq.pres); row.appendChild(h('span', 'presTag', d ? d.name : 'Plantilla')); }
+      box.appendChild(row);
+    }
+    renderInspector(); drawPreview();
   }
 
   // ----- barra de seleccion con acciones rapidas -----
@@ -1063,29 +1024,59 @@
     b.addEventListener('click', function (ev) { ev.stopPropagation(); fn(ev); });
     return b;
   }
-  function placeSelBar() {
-    var bar = $('selBar'); bar.style.bottom = ($('app').querySelector('.foot').offsetHeight + 8) + 'px';
-  }
-  function renderSelBar() {
-    var bar = $('selBar'), n = Model.selCount(st, sel); bar.innerHTML = '';
-    bar.hidden = !st.seqs.length || ui.tab !== 'editor';
-    bar.classList.toggle('idle', !n);
-    placeSelBar();
-    if (!n) { bar.appendChild(h('span', 'hintTxt', 'Clic elige · Ctrl suma · Mayús rango · clic derecho para efectos')); return; }
+  function placeSelBar() {}
+  function renderSelBar() { if (ui.step === 'diseno') { renderInspector(); } }
+  var INSP_TABS = [['anim', 'Animación'], ['style', 'Estilo'], ['color', 'Color'], ['font', 'Fuente'], ['sound', 'Sonido'], ['pres', 'Plantilla'], ['remove', 'Quitar']];
+  function renderInspector() {
+    var box = $('insp'), n = Model.selCount(st, sel); box.innerHTML = '';
+    if (!st.seqs.length) { return; }
+    if (!n) {
+      var e = h('div', 'inspEmpty');
+      e.appendChild(h('b', '', 'Elige una palabra'));
+      e.appendChild(h('span', '', 'Tócala aquí arriba o en la vista previa. Con Ctrl sumas varias; clic derecho abre todos los efectos.'));
+      var all = h('button', 'pill ghost small', 'Elegir toda la frase'); all.type = 'button';
+      all.addEventListener('click', function () { Model.selectSeq(st, sel, activeSi(), false); render(); });
+      e.appendChild(all); box.appendChild(e); return;
+    }
     var u = function (f) { return Model.uniform(st, sel, f); };
-    bar.appendChild(h('span', 'cnt', n + (n === 1 ? ' palabra' : ' palabras')));
-    ['S', 'M', 'L'].forEach(function (sz) { bar.appendChild(qBtn(sz, 'Tamaño ' + sz + ' (tecla ' + ({ S: 1, M: 2, L: 3 })[sz] + ')', u('size') === sz, function () { quick({ size: sz }); })); });
-    bar.appendChild(h('span', 'sep'));
-    var br = u('brand') === true;
-    bar.appendChild(qBtn('', 'Palabra clave ★ (K)', br, function () { quick({ brand: !br }); }, 'amber', 'star'));
-    var bx = u('fmt') === 'box';
-    bar.appendChild(qBtn('', 'Caja (B)', bx, function () { quick({ fmt: bx ? '' : 'box' }); }, '', 'box'));
-    var gl = u('glow') === true;
-    bar.appendChild(qBtn('', 'Brillo (G)', gl, function () { quick({ glow: !gl }); }, '', 'glow'));
-    bar.appendChild(qBtn('', 'Animación de entrada', !!u('trans'), function (ev) { openMenuFrom(ev.currentTarget, 'anim'); }, '', 'motion'));
-    bar.appendChild(h('span', 'grow'));
-    bar.appendChild(qBtn('', 'Más efectos (clic derecho)', false, function (ev) { openMenuFrom(ev.currentTarget, null); }, '', 'more'));
-    bar.appendChild(qBtn('', 'Soltar selección (Esc)', false, function () { Model.clearSel(sel); render(); }, '', 'x'));
+    var head = h('div', 'inspHead');
+    var ws = Model.selWords(st, sel);
+    head.appendChild(h('b', '', n === 1 ? ES.displayText(ws[0].w.text, ws[0].w.c, S.upper) : n + ' palabras'));
+    var q = h('div', 'inspQuick');
+    ['S', 'M', 'L'].forEach(function (sz) { q.appendChild(qBtn(sz, 'Tamaño ' + sz + ' (tecla ' + ({ S: 1, M: 2, L: 3 })[sz] + ')', u('size') === sz, function () { quick({ size: sz }); })); });
+    var br = u('brand') === true; q.appendChild(qBtn('', 'Palabra clave ★ (K)', br, function () { quick({ brand: !br }); }, 'amber', 'star'));
+    var bx = u('fmt') === 'box'; q.appendChild(qBtn('', 'Caja (B)', bx, function () { quick({ fmt: bx ? '' : 'box' }); }, '', 'box'));
+    var gl = u('glow') === true; q.appendChild(qBtn('', 'Brillo (G)', gl, function () { quick({ glow: !gl }); }, '', 'glow'));
+    q.appendChild(qBtn('', 'Soltar selección (Esc)', false, function () { Model.clearSel(sel); render(); }, '', 'x'));
+    head.appendChild(q); box.appendChild(head);
+    var tabs = h('div', 'inspTabs'); tabs.setAttribute('role', 'tablist');
+    INSP_TABS.forEach(function (t) {
+      var b = h('button', ui.inspTab === t[0] ? 'on' : '', t[1]); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', ui.inspTab === t[0] ? 'true' : 'false');
+      b.addEventListener('click', function () { ui.inspTab = t[0]; renderInspector(); });
+      tabs.appendChild(b);
+    });
+    box.appendChild(tabs);
+    var body = h('div', 'inspBody menu inline' + ({ anim: ' grid', sound: ' grid', pres: ' grid' }[ui.inspTab] || ''));
+    var after = BUILD[ui.inspTab](body);
+    box.appendChild(body);
+    // a que se aplica
+    var scope = h('div', 'inspScope'), si = activeSi(), stl = st.seqs[si] ? Model.effStyle(st.seqs[si], S) : '';
+    scope.appendChild(h('span', '', 'Elegir'));
+    var b1 = h('button', 'link', 'toda la frase'); b1.type = 'button'; b1.addEventListener('click', function () { Model.selectSeq(st, sel, si, false); render(); });
+    var b2 = h('button', 'link', 'todas las de ' + STYLE_NAME[stl].toLowerCase()); b2.type = 'button';
+    b2.addEventListener('click', function () {
+      Model.clearSel(sel);
+      st.seqs.forEach(function (q2, i) { if (!q2.pres && Model.effStyle(q2, S) === stl) { Model.selectSeq(st, sel, i, true); } });
+      render(); say('Elegidas todas las frases de ' + STYLE_NAME[stl].toLowerCase() + ': lo que apliques va a todas.', 'ok');
+    });
+    scope.appendChild(b1); scope.appendChild(h('span', '', '·')); scope.appendChild(b2);
+    box.appendChild(scope);
+    var look = h('button', 'lookLink'); look.type = 'button';
+    look.appendChild(h('i', 'dot ' + (STYLE_CLS[stl] || 'st'))); look.appendChild(h('span', '', 'Aspecto de ' + STYLE_NAME[stl].toLowerCase() + ': tamaños, colores y más'));
+    look.appendChild(icon('chev'));
+    look.addEventListener('click', function () { openLook(stl); });
+    box.appendChild(look);
+    if (after && ui.inspTab !== 'font') { after(); }
   }
   function quick(patch) { mutate(function () { Model.applyPatch(st, sel, patch); }); }
   function openMenuFrom(el, sub) {
@@ -1094,7 +1085,6 @@
   }
 
   function updateButtons() {
-    if (!gen) { $('btnGenAll').disabled = !st.seqs.length; $('btnGenSel').disabled = !Model.selCount(st, sel); }
     $('btnUndo').disabled = !history.length; $('btnRedo').disabled = !future.length;
   }
 
@@ -1194,16 +1184,14 @@
   function drawPreview(t) {
     var m = $('monitor');
     m.hidden = !st.seqs.length;
-    m.classList.toggle('closed', !mon.open);
-    $('monToggle').setAttribute('aria-expanded', mon.open ? 'true' : 'false');
-    if (!st.seqs.length) { return; }
+    if (!st.seqs.length || ui.step !== 'diseno') { return; }
     var si = activeSi(), L = layoutSeq(si), seq = L.seq, lay = L.lay;
     var meta = (si + 1) + '/' + st.seqs.length + ' · ' + fmtTime(seq.start) + ' · ' + (L.karaoke ? 'Caja que recorre' : (L.line ? (L.line.style === 'applexby' ? 'APPLEXBY' : 'Una línea') : ALIGN_NAME[lay.align])) + (lay.scale < 0.999 ? ' · reducida ' + Math.round(lay.scale * 100) + '%' : '');
     if (seq.pres) { var pd = pstore.get(seq.pres); meta = 'Frase ' + (si + 1) + ' · plantilla “' + (pd ? pd.name : '?') + '”'; }
+    $('monTitle').textContent = 'Frase ' + (si + 1) + ' de ' + st.seqs.length;
+    meta = fmtTime(seq.start) + ' · ' + (seq.pres ? 'plantilla' : STYLE_NAME[Model.effStyle(seq, S)]) + (lay.scale < 0.999 && !seq.pres ? ' · reducida ' + Math.round(lay.scale * 100) + '%' : '');
     $('monMeta').textContent = meta; $('monMeta').title = meta;
     $('monPrev').disabled = si <= 0; $('monNext').disabled = si >= st.seqs.length - 1;
-    if (!mon.open) { return; }
-
     var cv = $('monCanvas'), body = $('monBody'), cw = body.clientWidth || 400, dpr = window.devicePixelRatio || 1;
     var ya = Math.max(0, L.H * (S.zoneTop - 3) / 100), yb = Math.min(L.H, L.H * (S.zoneBottom + 3) / 100);
     var k = cw / L.W, ch = Math.round((yb - ya) * k);
@@ -1372,7 +1360,6 @@
   function togglePlay() {
     if (!st.seqs.length) { return; }
     if (mon.playing) { stopPlay(); return; }
-    if (!mon.open) { mon.open = true; lsSet('escaleraSubs3.mon', true); }
     var si = activeSi(), seq = st.seqs[si];
     var len = ES.seqEnd(seq, S.tail, null) - seq.start + 0.6;
     mon.playing = true; mon.t0 = performance.now();
@@ -1387,7 +1374,6 @@
   $('monPlay').addEventListener('click', togglePlay);
   $('monPrev').addEventListener('click', function () { stopPlay(); setActiveSeq(Math.max(0, activeSi() - 1)); render(); });
   $('monNext').addEventListener('click', function () { stopPlay(); setActiveSeq(Math.min(st.seqs.length - 1, activeSi() + 1)); render(); });
-  $('monToggle').addEventListener('click', function () { mon.open = !mon.open; lsSet('escaleraSubs3.mon', mon.open); drawPreview(); placeSelBar(); });
   $('monCanvas').addEventListener('click', function (ev) {
     var r = ev.currentTarget.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, i;
     for (i = 0; i < mon.hits.length; i++) {
@@ -1404,7 +1390,7 @@
       if (x >= hh.x0 && x <= hh.x1 && y >= hh.y0 && y <= hh.y1) { ev.preventDefault(); Model.contextTarget(st, sel, hh.id); ui.activeId = hh.id; render(); openMenu(ev.clientX, ev.clientY, {}); return; }
     }
   });
-  window.addEventListener('resize', function () { drawPreview(); placeSelBar(); });
+  window.addEventListener('resize', function () { drawPreview(); });
 
   // ================= menu contextual en cascada =================
   var SW = ['#ffffff', '#ffd400', '#ff9f1c', '#ff4d6d', '#ff6bd6', '#7c5cff', '#3b82f6', '#2de2e6', '#3ddc84', '#a3e635', '#f5a524', '#111111', '#ddb76a', '#9ca3af', '#8b5a2b', '#00ff9c'];
@@ -1488,7 +1474,7 @@
     if (keepOpen) { refreshMenu(); } else { closeMenu(); }
   }
   function refreshMenu() {
-    if (!menuOpen()) { return; }
+    if (!menuOpen()) { if (ui.step === 'diseno') { renderInspector(); } return; }
     var key = MN.openKey, left = $('ctx').style.left, top = $('ctx').style.top;
     buildRoot(); $('ctx').style.left = left; $('ctx').style.top = top;
     if (key) { var el = $('ctx').querySelector('.it[data-k="' + key + '"]'); if (el) { MN.openKey = null; openFly(el, key, false, true); } }
@@ -1714,36 +1700,381 @@
   document.addEventListener('scroll', function (ev) { if (menuOpen() && !$('ctx').contains(ev.target) && !$('ctxFly').contains(ev.target)) { closeMenu(); } }, true);
   window.addEventListener('blur', function () { if (menuOpen() && !document.activeElement.closest('.menu')) { closeMenu(); } });
 
+  // ================= pasos: Texto · Frases · Diseño · Generar =================
+  var STEPS = ['texto', 'frases', 'diseno', 'generar'];
+  var STEP_NAME = { texto: 'Texto', frases: 'Frases', diseno: 'Diseño', generar: 'Generar' };
+  var STYLE_NAME = { lockup: 'Escalera', karaoke: 'Caja que recorre', line: 'Una línea', applexby: 'APPLEXBY' };
+  var STYLE_CLS = { lockup: 'st', karaoke: 'bx', line: 'ln', applexby: 'ax' };
+  function goStep(name) {
+    if (STEPS.indexOf(name) < 0) { return; }
+    if (name !== 'texto' && !st.seqs.length) { say('Primero importa el SRT.', 'err'); return; }
+    stopPlay(); closeMenu(); ui.step = name; lsSet('laddersu.step', name); $('toast').hidden = true;
+    if (name === 'diseno' && activeSi() < 0) { setActiveSeq(0); }
+    render();
+    var v = $('step-' + name); if (v) { v.scrollTop = 0; }
+    $('tab-editor').scrollTop = 0;
+  }
+  function renderStepper() {
+    var idx = STEPS.indexOf(ui.step), btns = document.querySelectorAll('#stepper .stp'), i;
+    for (i = 0; i < btns.length; i++) {
+      var k = btns[i].getAttribute('data-step'), j = STEPS.indexOf(k);
+      btns[i].classList.toggle('on', k === ui.step);
+      btns[i].classList.toggle('done', j < idx);
+      btns[i].disabled = j > 0 && !st.seqs.length;
+      btns[i].setAttribute('aria-current', k === ui.step ? 'step' : 'false');
+      btns[i].querySelector('b').textContent = j < idx ? '✓' : String(j + 1);
+    }
+    STEPS.forEach(function (k) { $('step-' + k).hidden = k !== ui.step; });
+    // pie: atras / siguiente
+    var back = $('btnBack'), next = $('btnNext'), info = $('stepInfo');
+    back.hidden = idx === 0;
+    info.textContent = 'Paso ' + (idx + 1) + ' de 4';
+    next.hidden = ui.step === 'generar' || (ui.step === 'frases' && !st.based);
+    next.disabled = !st.seqs.length;
+    next.textContent = idx < 3 ? 'Siguiente: ' + STEP_NAME[STEPS[idx + 1]].toLowerCase() : '';
+  }
+  (function () {
+    var btns = document.querySelectorAll('#stepper .stp'), i;
+    for (i = 0; i < btns.length; i++) { btns[i].addEventListener('click', function (ev) { goStep(ev.currentTarget.getAttribute('data-step')); }); }
+    $('btnBack').addEventListener('click', function () { goStep(STEPS[Math.max(0, STEPS.indexOf(ui.step) - 1)]); });
+    $('btnNext').addEventListener('click', function () { goStep(STEPS[Math.min(3, STEPS.indexOf(ui.step) + 1)]); });
+  })();
+
+  // ---------- 1 · Texto ----------
+  function allWords() { var a = []; st.seqs.forEach(function (q) { q.words.forEach(function (w) { a.push(w); }); }); return a; }
+  function renderTexto() {
+    var has = st.seqs.length > 0;
+    $('empty').hidden = has; $('textoView').hidden = !has;
+    if (!has) { return; }
+    var ws = allWords(), dur = ws.length ? ws[ws.length - 1].end : 0, paras = Model.paragraphs(st);
+    $('srcName').textContent = (st.src && st.src.name) || 'subtitulos.srt';
+    $('srcMeta').textContent = ws.length + ' palabras · ' + fmtClock(dur) + ' · ' + paras.length + (paras.length === 1 ? ' bloque' : ' bloques');
+    var box = $('transcript'); box.innerHTML = '';
+    paras.forEach(function (p) {
+      var row = h('div', 'para'); row.appendChild(h('span', 't', fmtClock(p.start)));
+      var tx = h('p', 'tx');
+      p.words.forEach(function (w, k) {
+        var b = h('button', 'tw' + (ui.textSel === w.id ? ' sel' : ''), w.text); b.type = 'button'; b.setAttribute('data-id', w.id);
+        b.title = fmtTime(w.start) + ' – ' + fmtTime(w.end);
+        b.addEventListener('click', function (ev) { ev.stopPropagation(); ui.textSel = w.id; renderTexto(); openWordPop(w.id); });
+        tx.appendChild(b); if (k < p.words.length - 1) { tx.appendChild(document.createTextNode(' ')); }
+      });
+      row.appendChild(tx); box.appendChild(row);
+    });
+    if (ui.textSel != null && !Model.find(st, ui.textSel)) { ui.textSel = null; }
+    if (ui.textSel != null) { openWordPop(ui.textSel, true); }
+  }
+  function fmtClock(t) { var m = Math.floor(t / 60), s2 = Math.floor(t - m * 60); return m + ':' + (s2 < 10 ? '0' : '') + s2; }
+  function closeWordPop() { var p = $('wordPop'); if (p) { p.remove(); } }
+  function openWordPop(id, keepEdit) {
+    closeWordPop();
+    var el = document.querySelector('#transcript .tw[data-id="' + id + '"]'), f = Model.find(st, id); if (!el || !f) { return; }
+    var pop = h('div', 'wordPop'); pop.id = 'wordPop'; pop.setAttribute('role', 'toolbar'); pop.setAttribute('aria-label', 'Palabra elegida');
+    var inp = h('input'); inp.type = 'text'; inp.value = f.w.text; inp.setAttribute('aria-label', 'Corregir la palabra');
+    var commit = function () {
+      var v = inp.value.replace(/^\s+|\s+$/g, '');
+      if (!v || v === f.w.text) { return; }
+      mutate(function () { Model.editText(st, id, v); }); say(/\s/.test(v) ? 'Palabra separada.' : 'Palabra corregida.', 'ok');
+    };
+    inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { commit(); } if (ev.key === 'Escape') { ui.textSel = null; closeWordPop(); renderTexto(); } ev.stopPropagation(); });
+    pop.appendChild(inp);
+    var ok = h('button', 'q on', 'Corregir'); ok.type = 'button'; ok.addEventListener('click', commit); pop.appendChild(ok);
+    var ids = Model.allIds(st), k = ids.indexOf(id);
+    var jn = h('button', 'q', 'Unir con la siguiente'); jn.type = 'button'; jn.disabled = k >= ids.length - 1;
+    jn.addEventListener('click', function () { mutate(function () { Model.joinWords(st, id); }); say('Palabras unidas.', 'ok'); });
+    pop.appendChild(jn);
+    var sp = h('button', 'q', 'Separar'); sp.type = 'button'; sp.disabled = !/\s/.test(f.w.text);
+    sp.title = sp.disabled ? 'Escribe un espacio donde quieras separarla y pulsa Corregir' : 'Separar en varias palabras';
+    sp.addEventListener('click', function () { mutate(function () { Model.splitWord(st, id); }); say('Palabra separada.', 'ok'); });
+    pop.appendChild(sp);
+    var del = h('button', 'q danger', 'Quitar'); del.type = 'button';
+    del.addEventListener('click', function () { var s0 = Model.newSel(); s0.m[id] = true; mutate(function () { Model.deleteWords(st, s0); }); ui.textSel = null; say('Palabra quitada.', 'ok'); });
+    pop.appendChild(del);
+    el.parentNode.parentNode.insertAdjacentElement('afterend', pop);
+    if (!keepEdit) { setTimeout(function () { inp.focus(); inp.select(); }, 0); }
+  }
+  document.addEventListener('mousedown', function (ev) {
+    if (ui.textSel != null && !ev.target.closest('#wordPop,#transcript .tw')) { ui.textSel = null; closeWordPop(); var s2 = document.querySelector('#transcript .tw.sel'); if (s2) { s2.classList.remove('sel'); } }
+  });
+  $('btnReplace').addEventListener('click', function () {
+    var f = $('findIn').value, r = $('replIn').value, n = 0;
+    if (!f.replace(/\s+/g, '')) { $('findIn').focus(); return; }
+    var probe = JSON.parse(JSON.stringify(st)); n = Model.replaceAll(probe, f, r);
+    if (!n) { say('No encontré “' + f + '” como palabra.', 'err'); return; }
+    mutate(function () { Model.replaceAll(st, f, r); });
+    say(n === 1 ? '1 palabra reemplazada.' : n + ' palabras reemplazadas.', 'ok');
+  });
+  $('findIn').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { $('replIn').focus(); } });
+  $('replIn').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { $('btnReplace').click(); } });
+  function clearAll() {
+    snap(); st = { seqs: [] }; Model.clearSel(sel); ui.activeId = null; ui.fsel = {}; ui.result = null; ui.step = 'texto'; persistEdit(); render();
+    toastUndo('SRT quitado.');
+  }
+  function toastUndo(msg) { ui.lastMut = Date.now(); say(msg, 'ok'); }
+  $('btnClear').addEventListener('click', clearAll);
+
+  // ---------- 2 · Frases ----------
+  var BASES = [
+    { id: 'lockup', name: 'Escalera', words: '3 a 6 palabras', desc: 'Bloques con tamaños S, M y L y palabra clave.', key: 'stairLen', opts: ['Cortos', 'Medios', 'Largos'], lab: 'Largo de los bloques' },
+    { id: 'line', name: 'Una línea', words: '1 a 3 palabras', desc: 'Frases cortas en una sola línea, abajo.', key: 'lineWords', opts: ['1 palabra', '2 palabras', '3 palabras'], lab: 'Palabras por frase', off: 1 },
+    { id: 'karaoke', name: 'Caja que recorre', words: '4 a 8 palabras', desc: 'La frase entera y una caja que pasa de palabra en palabra.', key: 'boxLen', opts: ['Cortas', 'Medias', 'Largas'], lab: 'Largo de las frases' }
+  ];
+  function baseOf(style) { var i; for (i = 0; i < BASES.length; i++) { if (BASES[i].id === style) { return BASES[i]; } } return BASES[0]; }
+  function lenVal(b) { var v = S[b.key]; return v == null ? 1 : (b.off ? v - b.off : v); }
+  function renderFrases() {
+    var showBase = !st.based || ui.baseOpen;
+    $('baseView').hidden = !showBase; $('frasesView').hidden = showBase;
+    if (showBase) { renderBase(); } else { renderFrasesList(); }
+    renderStepper();
+  }
+  function renderBase() {
+    var box = $('baseView'); box.innerHTML = '';
+    var cur = ui.basePick || (ES.isLineStyle(S.editStyle) ? 'line' : S.editStyle) || 'lockup';
+    ui.basePick = cur;
+    var head = h('div', 'stepHead'); head.appendChild(h('h2', '', '¿Cómo será la mayoría de frases?'));
+    head.appendChild(h('p', '', 'Con esto Laddersu decide cuántas palabras van juntas. Después puedes pasar cualquier tramo a otro estilo.'));
+    box.appendChild(head);
+    BASES.forEach(function (b) {
+      var on = cur === b.id, c = h('button', 'baseCard ' + STYLE_CLS[b.id] + (on ? ' on' : '')); c.type = 'button'; c.setAttribute('aria-pressed', on ? 'true' : 'false');
+      c.appendChild(h('span', 'radio'));
+      var tx = h('span', 'tx'), t1 = h('span', 'nm'); t1.appendChild(h('b', '', b.name)); t1.appendChild(h('span', 'tag ' + STYLE_CLS[b.id], b.words));
+      tx.appendChild(t1); tx.appendChild(h('small', '', b.desc)); c.appendChild(tx);
+      c.appendChild(styleArt(b.id === 'lockup' ? 'lockup' : b.id));
+      c.addEventListener('click', function () { ui.basePick = b.id; renderBase(); });
+      box.appendChild(c);
+    });
+    var b0 = baseOf(cur);
+    box.appendChild(h('div', 'lab2', b0.lab));
+    var sg = h('div', 'segc'); sg.setAttribute('role', 'group'); sg.setAttribute('aria-label', b0.lab);
+    b0.opts.forEach(function (o, i) {
+      var bt = h('button', lenVal(b0) === i ? 'on' : '', o); bt.type = 'button';
+      bt.addEventListener('click', function () { S[b0.key] = b0.off ? i + b0.off : i; saveCfg(); renderBase(); });
+      sg.appendChild(bt);
+    });
+    box.appendChild(sg);
+    // cuantas frases quedarian
+    var S2 = JSON.parse(JSON.stringify(S)); S2.editStyle = cur;
+    var est = Model.groupFor(allWords().slice().sort(function (a, b2) { return a.start - b2.start; }).map(function (w) { return { text: w.text, start: w.start, end: w.end, c: {} }; }), cur, S2).length;
+    var act = h('div', 'baseAct');
+    act.appendChild(h('span', 'est', 'Quedarán ' + est + (est === 1 ? ' frase' : ' frases')));
+    if (st.based) { var cancel = h('button', 'pill ghost', 'Cancelar'); cancel.type = 'button'; cancel.addEventListener('click', function () { ui.baseOpen = false; render(); }); act.appendChild(cancel); }
+    var go = h('button', 'pill', st.based ? 'Volver a agrupar' : 'Agrupar'); go.type = 'button'; go.id = 'btnGroup';
+    go.addEventListener('click', function () {
+      var hadMix = st.based && st.seqs.some(function (q) { return q.style; });
+      mutate(function () { S.editStyle = cur; saveCfg(); Model.regroup(st, S); st.based = true; });
+      ui.baseOpen = false; ui.fsel = {}; setActiveSeq(0); render();
+      say(st.seqs.length + ' frases de ' + STYLE_NAME[cur].toLowerCase() + '.' + (hadMix ? ' Los estilos por frase se rearmaron.' : ''), 'ok');
+    });
+    act.appendChild(go); box.appendChild(act);
+  }
+  function renderFrasesList() {
+    var counts = {}, total = st.seqs.length;
+    st.seqs.forEach(function (q) { var k = q.pres ? 'pres' : Model.effStyle(q, S); counts[k] = (counts[k] || 0) + 1; });
+    var stt = $('frStats'); stt.innerHTML = '';
+    stt.appendChild(h('b', '', total + (total === 1 ? ' frase' : ' frases')));
+    ['lockup', 'line', 'karaoke', 'applexby', 'pres'].forEach(function (k) {
+      if (!counts[k]) { return; }
+      var e = h('span', 'cnt ' + (STYLE_CLS[k] || 'pr')); e.appendChild(h('i')); e.appendChild(document.createTextNode(counts[k] + ' ' + (k === 'pres' ? 'plantilla' : STYLE_NAME[k].toLowerCase())));
+      stt.appendChild(e);
+    });
+    // barra del video
+    var bar = $('frBar'); bar.innerHTML = '';
+    var t0 = st.seqs[0].start, t1 = st.seqs[total - 1].end, span = Math.max(0.01, t1 - t0);
+    st.seqs.forEach(function (q, i) {
+      var seg2 = h('i', STYLE_CLS[q.pres ? 'pres' : Model.effStyle(q, S)] || 'pr'); seg2.style.flexGrow = String(Math.max(0.2, (q.end - q.start) / span * 100));
+      if (ui.fsel[firstId(q)]) { seg2.classList.add('sel'); }
+      bar.appendChild(seg2); void i;
+    });
+    var list = $('frList'); list.innerHTML = '';
+    st.seqs.forEach(function (q, i) { list.appendChild(frRow(q, i)); });
+    renderFrSel();
+  }
+  function firstId(q) { return q.words[0].id; }
+  function selSis() { var out = []; st.seqs.forEach(function (q, i) { if (ui.fsel[firstId(q)]) { out.push(i); } }); return out; }
+  function frRow(q, i) {
+    var k = q.pres ? 'pres' : Model.effStyle(q, S), on = !!ui.fsel[firstId(q)];
+    var row = h('div', 'frRow ' + (STYLE_CLS[k] || 'pr') + (on ? ' on' : '')); row.setAttribute('data-si', i);
+    var cb = h('button', 'cb' + (on ? ' on' : '')); cb.type = 'button'; cb.setAttribute('aria-pressed', on ? 'true' : 'false'); cb.setAttribute('aria-label', 'Elegir la frase ' + (i + 1));
+    if (on) { cb.appendChild(icon('check')); }
+    cb.addEventListener('click', function (ev) {
+      var id = firstId(q);
+      if (ev.shiftKey && ui.fLast != null) {
+        var a = Math.min(ui.fLast, i), b = Math.max(ui.fLast, i), j; for (j = a; j <= b; j++) { ui.fsel[firstId(st.seqs[j])] = true; }
+      } else if (ui.fsel[id]) { delete ui.fsel[id]; } else { ui.fsel[id] = true; }
+      ui.fLast = i; renderFrasesList();
+    });
+    row.appendChild(cb);
+    var n = h('span', 'n'); n.appendChild(document.createTextNode(String(i + 1))); n.appendChild(h('small', '', fmtClock(q.start))); row.appendChild(n);
+    var w = h('span', 'w');
+    q.words.forEach(function (wd, j) {
+      if (j > 0) {
+        var cut = h('button', 'cut'); cut.type = 'button'; cut.title = 'Cortar aquí'; cut.setAttribute('aria-label', 'Cortar la frase antes de “' + wd.text + '”');
+        cut.appendChild(icon('cut'));
+        cut.addEventListener('click', function () { mutate(function () { Model.split(st, i, j); }); say('Frase cortada.', 'ok'); });
+        w.appendChild(cut);
+      }
+      var sp = h('span', 'wt', wd.text); w.appendChild(sp);
+    });
+    row.appendChild(w);
+    var tag = h('span', 'tag ' + (STYLE_CLS[k] || 'pr'), k === 'pres' ? ((pstore.get(q.pres) || {}).name || 'Plantilla') : STYLE_NAME[k]);
+    row.appendChild(tag);
+    row.addEventListener('dblclick', function () { setActiveSeq(i); goStep('diseno'); });
+    return row;
+  }
+  function renderFrSel() {
+    var old = $('frSel'); if (old) { old.remove(); }
+    var sis = selSis(); if (!sis.length) { return; }
+    var bar = h('div', 'frSel'); bar.id = 'frSel'; bar.setAttribute('role', 'toolbar'); bar.setAttribute('aria-label', 'Frases elegidas');
+    bar.appendChild(h('b', '', sis.length + (sis.length === 1 ? ' frase' : ' frases')));
+    [['lockup', 'Escalera'], ['line', 'Una línea'], ['karaoke', 'Caja']].forEach(function (o) {
+      var b = h('button', 'sb ' + STYLE_CLS[o[0]], o[1]); b.type = 'button'; b.title = 'Pasar a ' + STYLE_NAME[o[0]].toLowerCase() + ' y reagrupar';
+      b.insertBefore(h('i'), b.firstChild);
+      b.addEventListener('click', function () {
+        var n0 = st.seqs.length;
+        mutate(function () { Model.regroupRange(st, sis, o[0], S); }); ui.fsel = {};
+        render(); say('Pasadas a ' + STYLE_NAME[o[0]].toLowerCase() + ': ahora hay ' + st.seqs.length + ' frases (' + (st.seqs.length >= n0 ? '+' : '') + (st.seqs.length - n0) + ').', 'ok');
+      });
+      bar.appendChild(b);
+    });
+    var jn = h('button', 'sb', 'Unir'); jn.type = 'button'; jn.disabled = sis.length < 2;
+    jn.addEventListener('click', function () {
+      mutate(function () { var k2; for (k2 = sis.length - 1; k2 > 0; k2--) { if (sis[k2] === sis[k2 - 1] + 1) { Model.merge(st, sis[k2 - 1]); } } }); ui.fsel = {}; render(); say('Frases unidas.', 'ok');
+    });
+    bar.appendChild(jn);
+    var x = h('button', 'iconBtn'); x.type = 'button'; x.setAttribute('aria-label', 'Quitar la selección'); x.appendChild(icon('x'));
+    x.addEventListener('click', function () { ui.fsel = {}; renderFrasesList(); });
+    bar.appendChild(x);
+    $('step-frases').appendChild(bar);
+  }
+  $('btnBase').addEventListener('click', function () { ui.baseOpen = true; ui.basePick = null; render(); });
+
+  // ---------- 4 · Generar ----------
+  function usedFonts() {
+    var m = {}; if (S.font) { m[S.font] = true; }
+    st.seqs.forEach(function (q) {
+      var stl = Model.effStyle(q, S);
+      if (stl === 'line' && S.linFont) { m[S.linFont] = true; } if (stl === 'applexby' && S.apxFont) { m[S.apxFont] = true; }
+      q.words.forEach(function (w) { if (w.c.font) { m[w.c.font] = true; } });
+    });
+    return Object.keys(m);
+  }
+  function genChecks() {
+    var out = [];
+    if (!ui.comp || !ui.comp.ok) {
+      out.push({ k: S.newComp ? 'info' : 'err', t: S.newComp ? 'Se creará una composición nueva de ' + S.compW + '×' + S.compH + '.' : 'No hay una composición abierta en After Effects. Ábrela (doble clic en ella) o crea una nueva aquí abajo.' });
+    }
+    if (fonts.length) {
+      var miss = usedFonts().filter(function (f) { return !Model.findFont(fonts, f); });
+      if (miss.length) { out.push({ k: 'warn', t: (miss.length === 1 ? 'La fuente ' + miss[0] + ' no está instalada' : miss.length + ' fuentes no están instaladas (' + miss.slice(0, 3).join(', ') + ')') + ': se usará la de After Effects.', fix: 'Ir a diseño', go: 'diseno' }); }
+    }
+    var red = [];
+    st.seqs.forEach(function (q, i) { if (!q.pres) { try { if (layoutSeq(i).lay.scale < 0.999) { red.push(i); } } catch (e) {} } });
+    if (red.length) { out.push({ k: 'info', t: (red.length === 1 ? 'La frase ' + (red[0] + 1) + ' se reduce' : red.length + ' frases se reducen') + ' para caber en la zona segura.', fix: 'Ver', go: 'diseno', si: red[0] }); }
+    if (!out.length) { out.push({ k: 'ok', t: 'Todo listo: las frases caben en la zona segura y las fuentes están instaladas.' }); }
+    return out;
+  }
+  function renderGenerar() {
+    var box = $('genView'); box.innerHTML = '';
+    if (!st.seqs.length) { return; }
+    var g = ui.gen;
+    // destino
+    var dest = h('div', 'genCard dest');
+    dest.appendChild(h('span', 'gIc')).appendChild(icon('comp'));
+    var dt = h('span', 'tx'); dt.appendChild(h('small', '', 'Se crea en'));
+    dt.appendChild(h('b', '', ui.comp && ui.comp.ok ? ui.comp.name + ' · ' + ui.comp.w + '×' + ui.comp.h + ' · ' + Math.round(ui.comp.fps || 30) + ' fps' : (S.newComp ? 'Una composición nueva' : 'Ninguna composición abierta')));
+    dest.appendChild(dt); box.appendChild(dest);
+    if (g) {
+      // generando
+      var pr = h('div', 'genRun');
+      var pct = Math.round(100 * g.done / Math.max(1, g.total));
+      var ring = h('div', 'ring'); ring.style.background = 'conic-gradient(var(--violet) ' + pct + '%, #2c2c31 0)'; ring.appendChild(h('span', '', pct + '%'));
+      pr.appendChild(ring);
+      pr.appendChild(h('b', '', g.stop ? 'Deteniendo…' : (g.done < g.total ? 'Creando la frase ' + (g.done + 1) + ' de ' + g.total : 'Terminando…')));
+      var cur = job0seq(g); if (cur) { pr.appendChild(h('span', 'soft', '“' + cur + '”')); }
+      var stop = h('button', 'pill ghost', 'Detener'); stop.type = 'button'; stop.id = 'btnStop'; stop.disabled = g.stop;
+      stop.addEventListener('click', function () { if (gen) { gen.stop = true; renderGenerar(); } });
+      pr.appendChild(stop);
+      pr.appendChild(h('small', 'soft', 'Si detienes, puedes quitar lo que alcanzó a crearse o dejarlo.'));
+      box.appendChild(pr); return;
+    }
+    if (ui.result) {
+      var r = ui.result, rc = h('div', 'genResult ' + (r.ok ? 'ok' : (r.stopped ? 'warn' : 'err')));
+      rc.appendChild(h('b', '', r.title)); if (r.msg) { rc.appendChild(h('span', '', r.msg)); }
+      if (!r.ok && r.si != null) {
+        var row = h('div', 'row');
+        var goF = h('button', 'pill small', 'Ir a la frase ' + (r.si + 1)); goF.type = 'button'; goF.addEventListener('click', function () { setActiveSeq(r.si); goStep('diseno'); });
+        var cp = h('button', 'pill ghost small', 'Copiar detalle para soporte'); cp.type = 'button';
+        cp.addEventListener('click', function () { copyText('Laddersu ' + (appVersion || Model.HOST_VER) + ' · frase ' + (r.si + 1) + '\n' + r.msg + '\n' + logs.slice(-12).map(function (l) { return l.t + ' ' + l.m; }).join('\n')); say('Detalle copiado.', 'ok'); });
+        row.appendChild(goF); row.appendChild(cp); rc.appendChild(row);
+      }
+      box.appendChild(rc);
+    }
+    // resumen
+    var nw = 0, nsfx = 0; st.seqs.forEach(function (q, i) { q.words.forEach(function (w, j) { nw++; if (ES.autoSfxFor(ES.normalizeClass(w.c), j, S.sfxAuto)) { nsfx++; } }); void i; });
+    var stats = h('div', 'genStats');
+    [[st.seqs.length, st.seqs.length === 1 ? 'frase' : 'frases'], [nw, 'capas de texto'], [nsfx, nsfx === 1 ? 'sonido' : 'sonidos']].forEach(function (x) { var c = h('div', 'stat'); c.appendChild(h('b', '', String(x[0]))); c.appendChild(h('span', '', x[1])); stats.appendChild(c); });
+    box.appendChild(stats);
+    box.appendChild(h('div', 'lab2', 'Antes de generar'));
+    genChecks().forEach(function (c) {
+      var e = h('div', 'chk ' + c.k); e.appendChild(icon(c.k === 'ok' ? 'check' : (c.k === 'err' ? 'x' : 'eye')));
+      e.appendChild(h('span', '', c.t));
+      if (c.fix) { var fx = h('button', 'pill ghost small', c.fix); fx.type = 'button'; fx.addEventListener('click', function () { if (c.si != null) { setActiveSeq(c.si); } goStep(c.go); }); e.appendChild(fx); }
+      box.appendChild(e);
+    });
+    // opciones
+    var ch = Model.changedSeqs(st, S);
+    var opts = h('div', 'genOpts');
+    opts.appendChild(fld('Reemplazar lo generado antes', toggle('replacePrev', function () { return S.replacePrev !== false; }, function (v) { S.replacePrev = v; saveCfg(); renderGenerar(); }), 'Tus propias capas no se tocan'));
+    if (!ui.comp || !ui.comp.ok || S.newComp) { opts.appendChild(fld('Crear una composición nueva', toggle('newComp', null, function (v) { S.newComp = v; saveCfg(); renderGenerar(); }))); }
+    var onlyOk = ch !== null && ch.length < st.seqs.length;
+    var o2 = fld('Solo las frases que cambiaron', toggle('genOnly', function () { return onlyOk && ui.genOnly; }, function (v) { ui.genOnly = v; renderGenerar(); }),
+      ch === null ? 'Se genera todo: es la primera vez o cambiaron los ajustes.' : (ch.length + (ch.length === 1 ? ' frase cambió' : ' frases cambiaron') + ' desde la última vez.'));
+    o2.classList.toggle('dis', !onlyOk); var sw = o2.querySelector('.switch'); if (sw) { sw.disabled = !onlyOk; }
+    o2.appendChild(h('small', 'soft', ch === null ? 'Se genera todo: es la primera vez o cambiaron los ajustes.' : (ch.length ? ch.length + (ch.length === 1 ? ' frase cambió' : ' frases cambiaron') + ' desde la última vez.' : 'Nada cambió desde la última vez.')));
+    opts.appendChild(o2);
+    box.appendChild(opts);
+    var only = onlyOk && ui.genOnly ? ch : null;
+    var n = only ? only.length : st.seqs.length;
+    var btn = h('button', 'pill big', only && !only.length ? 'Nada que generar' : 'Generar ' + n + (n === 1 ? ' frase' : ' frases')); btn.type = 'button'; btn.id = 'btnGenAll';
+    btn.disabled = !!(only && !only.length) || (!S.newComp && (!ui.comp || !ui.comp.ok) && hasAE());
+    btn.addEventListener('click', function () { generate(only); });
+    box.appendChild(btn);
+  }
+  function job0seq(g) { var q = g && g.texts ? g.texts[g.done] : null; return q || ''; }
+  function copyText(t) { var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); }
+
+  // ---------- menu ⋯ ----------
+  (function () {
+    var btn = $('btnMore'), m = $('moreMenu');
+    var close = function () { m.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    btn.addEventListener('click', function (ev) { ev.stopPropagation(); var open = m.hidden; m.hidden = !open; btn.setAttribute('aria-expanded', open ? 'true' : 'false'); });
+    document.addEventListener('click', function (ev) { if (!m.hidden && !m.contains(ev.target)) { close(); } });
+    m.addEventListener('click', function (ev) { if (ev.target.closest('button')) { close(); } });
+    $('btnNew').addEventListener('click', function () { if (st.seqs.length) { clearAll(); } });
+  })();
+
   // ================= importar SRT / IA =================
-  function processSRT(text) {
+  function processSRT(text, name) {
     var entries = ES.parseSRT(text);
     if (!entries.length) { say('No encontré subtítulos en ese texto. Revisa que sea un archivo .srt.', 'err'); return; }
-    snap(); st = Model.fromEntries(entries, S); Model.clearSel(sel); ui.activeId = null; ui.activeSi = 0; persistEdit(); render();
-    sayApply(entries.length + ' subtítulos agrupados en ' + st.seqs.length + ' frases. Tamaños detectados con reglas locales.', 'ok');
+    snap(); st = Model.fromEntries(entries, S);
+    st.src = { name: name || 'subtitulos.srt' }; st.based = false;
+    Model.clearSel(sel); ui.activeId = null; ui.activeSi = 0; ui.fsel = {}; ui.result = null; ui.step = 'texto'; persistEdit(); render();
+    say(entries.length + ' palabras importadas. Revisa el texto y sigue con las frases.', 'ok');
   }
-  readPicked($('srtFile'), function (txt) { processSRT(txt); });
-  $('btnParse').addEventListener('click', function () { processSRT($('srtPaste').value); });
+  readPicked($('srtFile'), function (txt, name) { processSRT(txt, name); });
+  readPicked($('srtFile2'), function (txt, name) { processSRT(txt, name); });
+  $('btnParse').addEventListener('click', function () { processSRT($('srtPaste').value, 'texto pegado'); });
   (function () {
     var dz = $('dropZone');
     ['dragenter', 'dragover'].forEach(function (e) { dz.addEventListener(e, function (ev) { ev.preventDefault(); dz.classList.add('over'); }); });
     ['dragleave', 'drop'].forEach(function (e) { dz.addEventListener(e, function (ev) { ev.preventDefault(); dz.classList.remove('over'); }); });
     dz.addEventListener('drop', function (ev) {
       var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]; if (!f) { return; }
-      var rd = new FileReader(); rd.onload = function () { processSRT(String(rd.result)); }; rd.readAsText(f, 'utf-8');
+      var rd = new FileReader(); rd.onload = function () { processSRT(String(rd.result), f.name); }; rd.readAsText(f, 'utf-8');
     });
   })();
 
-  $('btnCut').addEventListener('click', function () {
-    var ws = Model.selWords(st, sel);
-    if (ws.length !== 1 || ws[0].wi === 0) { say('Elige una palabra que no sea la primera de su frase: se corta antes de ella.', 'err'); return; }
-    mutate(function () { Model.split(st, ws[0].si, ws[0].wi); }); say('Frase cortada antes de “' + ws[0].w.text + '”.', 'ok');
-  });
-  $('btnJoin').addEventListener('click', function () {
-    var sis = Model.seqsWithSelection(st, sel).reverse(), n = 0;
-    if (!sis.length) { say('Elige una palabra de la frase que quieres unir con la siguiente.', 'err'); return; }
-    mutate(function () { sis.forEach(function (si) { if (Model.merge(st, si)) { n++; } }); });
-    say(n === 1 ? 'Frases unidas.' : n + ' uniones hechas.', n ? 'ok' : '');
-  });
   $('btnClean').addEventListener('click', function () {
     if (!st.seqs.length) { return; }
     var all = !Model.selCount(st, sel);
@@ -1793,7 +2124,7 @@
     ['editor', 'library'].forEach(function (t) { $('tab-' + t).hidden = (t !== name); });
     var tabs = document.querySelectorAll('.tab'), i;
     for (i = 0; i < tabs.length; i++) { var on = tabs[i].getAttribute('data-tab') === name; tabs[i].classList.toggle('on', on); tabs[i].setAttribute('aria-selected', on ? 'true' : 'false'); }
-    closeMenu(); $('toast').hidden = true; renderSelBar(); if (name === 'library') { showLib(ui.lib); }
+    closeMenu(); $('toast').hidden = true; $('foot').hidden = name !== 'editor'; if (name === 'library') { showLib(ui.lib); } else { render(); }
   }
   function showLib(w) {
     ui.lib = w; $('lib-comp').hidden = w !== 'comp'; $('lib-pres').hidden = w !== 'pres'; $('lib-snd').hidden = w !== 'snd';
@@ -1806,8 +2137,8 @@
     for (i = 0; i < ss.length; i++) { ss[i].addEventListener('click', function (ev) { showLib(ev.currentTarget.getAttribute('data-lib')); }); }
   })();
   $('btnSettings').addEventListener('click', function () { renderSettings(); $('settings').hidden = false; closeMenu(); });
+  function openLook(style) { ui.lookStyle = style; renderSettings(); $('settings').hidden = false; closeMenu(); var c = $('lookCard'); if (c) { c.scrollIntoView({ block: 'start' }); } }
   $('btnCloseSettings').addEventListener('click', function () { $('settings').hidden = true; saveCfg(); render(); });
-  $('btnLog').addEventListener('click', function () { var b = $('logBox'); b.hidden = !b.hidden; $('btnLog').setAttribute('aria-expanded', b.hidden ? 'false' : 'true'); placeSelBar(); });
 
   // ----- atajos -----
   var KEYS = [
@@ -1866,66 +2197,53 @@
     var d; try { d = JSON.parse(txt); } catch (e) { d = null; }
     var r = Model.importEdit(d);
     if (!r) { say('Ese archivo no es una edición de Laddersu (ni de Escalera Subs).', 'err'); return; }
-    snap(); st = r.st; Model.clearSel(sel); ui.activeId = null; persistEdit(); render(); say('Edición importada: ' + st.seqs.length + ' frases.', 'ok');
+    snap(); st = r.st; Model.clearSel(sel); ui.activeId = null; ui.fsel = {}; ui.result = null; ui.step = 'frases'; persistEdit(); render(); say('Edición importada: ' + st.seqs.length + ' frases.', 'ok');
   });
 
   // ================= generar (por pasos, se puede detener) =================
-  var gen = null;   // {run, total, done, stop, only, btn}
-  function sayApply(m, c) { say(m, c, 'msgApply'); }
-  function genButtons() {
-    var all = $('btnGenAll'), one = $('btnGenSel');
-    if (gen) {
-      var b = gen.only ? one : all, other = gen.only ? all : one;
-      b.disabled = false; b.classList.add('running');
-      b.style.setProperty('--p', Math.round(100 * gen.done / Math.max(1, gen.total)) + '%');
-      b.innerHTML = '';
-      b.appendChild(icon('stop'));
-      b.appendChild(h('span', '', gen.stop ? 'Deteniendo…' : 'Detener · ' + gen.done + '/' + gen.total));
-      b.title = 'Detener la generación'; other.disabled = true;
-    } else {
-      [all, one].forEach(function (x) { x.classList.remove('running'); x.style.removeProperty('--p'); });
-      all.textContent = 'Generar edición'; one.textContent = 'Generar selección';
-      all.title = 'Crea toda la edición en la composición activa'; one.title = 'Crea solo las frases elegidas';
-      updateButtons();
-    }
+  // Todo se ve en el paso Generar: progreso, Detener y el resultado (con la frase que falló, si alguna).
+  var gen = null;   // {run, total, done, stop, idx, texts}
+  function sayApply(m, c) { logLine(m, c); if (c === 'err') { say(m, 'err'); } }
+  function genButtons() { ui.gen = gen; if (ui.step === 'generar') { renderGenerar(); } }
+  function finishGen(result) {
+    gen = null; ui.gen = null; ui.result = result; refreshComp(); logLine(result.title + (result.msg ? ' ' + result.msg : ''), result.ok ? 'ok' : 'err');
+    if (ui.step === 'generar') { renderGenerar(); } else { say(result.title, result.ok ? 'ok' : 'err'); }
   }
-  function finishGen(msg, cls, extra) {
-    gen = null; genButtons(); sayApply(msg, cls); placeSelBar(); refreshComp();
-    if (extra) { extra(); }
-  }
-  function generate(onlySel) {
+  function generate(only) {
     if (gen) { gen.stop = true; genButtons(); return; }
     if (!st.seqs.length) { return; }
-    var only = null;
-    if (onlySel) { only = Model.seqsWithSelection(st, sel); if (!only.length) { say('Elige al menos una palabra para generar solo esa parte.', 'err'); return; } }
     saveCfg();
-    var job = Model.buildJob(st, S, { only: only, sfxPath: sfxPath, presDefs: pstore.defs(), assign: Pres.assignSlots });
-    if (!hasAE()) { sayApply('Abre este panel dentro de After Effects para generar.', 'err'); return; }
+    var job = Model.buildJob(st, S, { only: only && only.length ? only : null, sfxPath: sfxPath, presDefs: pstore.defs(), assign: Pres.assignSlots });
+    if (!hasAE()) { finishGen({ ok: false, title: 'Abre este panel dentro de After Effects para generar.' }); return; }
     var last = job.seqs[job.seqs.length - 1];
     var head = { cfg: job.cfg, sfx: job.sfx, pres: job.pres, replace: job.replace, need: last.words[last.words.length - 1].end + 2 };
-    gen = { run: '', total: job.seqs.length, done: 0, stop: false, only: !!only };
-    genButtons(); sayApply('Preparando…');
+    var idx = job.seqs.map(function (q) { return q.n - 1; });
+    gen = { run: '', total: job.seqs.length, done: 0, stop: false, idx: idx, texts: job.seqs.map(function (q) { return q.words.map(function (w) { return w.text; }).join(' '); }) };
+    ui.result = null; genButtons();
     ensureHost(function (ok) {
-      if (!ok) { finishGen('No se pudo cargar el motor en After Effects. Cierra el panel, ábrelo de nuevo y reintenta.', 'err'); return; }
+      if (!ok) { finishGen({ ok: false, title: 'No se pudo cargar el motor en After Effects.', msg: 'Cierra el panel, ábrelo de nuevo y reintenta.' }); return; }
       evalAE('ES_begin(' + JSON.stringify(JSON.stringify(head)) + ')', function (r) {
         var b = parseJSON(r);
-        if (!b || !b.ok) { finishGen(b ? b.msg : 'Respuesta inesperada de After Effects: ' + r, 'err'); return; }
+        if (!b || !b.ok) { finishGen({ ok: false, title: 'No se pudo empezar.', msg: b ? b.msg : 'Respuesta inesperada de After Effects: ' + r }); return; }
         gen.run = b.run;
         if (b.removed) { logLine('Reemplazadas ' + b.removed + ' capas generadas antes.', ''); }
         (function next() {
           if (!gen) { return; }
           if (gen.stop) { stopped(); return; }
           if (gen.done >= gen.total) {
-            evalAE('ES_end()', function (r3) { var e = parseJSON(r3); finishGen(e ? e.msg : 'Listo.', e && e.ok ? 'ok' : 'err'); });
+            evalAE('ES_end()', function (r3) {
+              var e = parseJSON(r3);
+              if (e && e.ok) { Model.markGenerated(st, S); persistEdit(); }
+              finishGen({ ok: !!(e && e.ok), title: e && e.ok ? 'Listo: ' + gen.total + (gen.total === 1 ? ' frase creada.' : ' frases creadas.') : 'Algo falló al terminar.', msg: e ? e.msg : '' });
+            });
             return;
           }
-          sayApply('Creando frase ' + (gen.done + 1) + ' de ' + gen.total + '…');
           evalAE('ES_step(' + JSON.stringify(JSON.stringify([job.seqs[gen.done]])) + ')', function (r2) {
             var o = parseJSON(r2);
             if (!o || !o.ok) {
-              var run = gen.run;
+              var run = gen.run, si = gen.idx[gen.done];
               evalAE('ES_stop(' + JSON.stringify(run) + ', false)');
-              finishGen((o ? o.msg : 'Respuesta inesperada: ' + r2) + ' (frase ' + (gen.done + 1) + ')', 'err');
+              finishGen({ ok: false, title: 'No se pudo crear la frase ' + (si + 1) + '.', msg: o ? o.msg : 'Respuesta inesperada: ' + r2, si: si });
               return;
             }
             gen.done++; genButtons(); next();
@@ -1936,7 +2254,8 @@
     function stopped() {
       var run = gen.run, done = gen.done, total = gen.total;
       evalAE('ES_stop(' + JSON.stringify(run) + ', false)', function () {
-        finishGen('Detenido: ' + done + ' de ' + total + ' frases creadas.', '', function () { offerRemove(run, done); });
+        finishGen({ ok: false, stopped: true, title: 'Detenido: ' + done + ' de ' + total + ' frases creadas.' });
+        offerRemove(run, done);
       });
     }
   }
@@ -1944,19 +2263,17 @@
   function offerRemove(run, done) {
     var t = $('toast'); if (!done) { return; }
     t.innerHTML = ''; t.className = 'toast';
-    t.appendChild(h('span', '', 'Detenido. ¿Quitar las ' + done + ' frases ya creadas?'));
+    t.appendChild(h('span', '', '¿Quitar las ' + done + ' frases ya creadas?'));
     var b = h('button', '', 'Quitar'); b.type = 'button';
     b.addEventListener('click', function () {
       t.hidden = true;
-      evalAE('ES_stop(' + JSON.stringify(run) + ', true)', function (r) { var o = parseJSON(r); sayApply(o ? 'Quitadas ' + o.removed + ' capas.' : 'Listo.', 'ok'); });
+      evalAE('ES_stop(' + JSON.stringify(run) + ', true)', function (r) { var o = parseJSON(r); say(o ? 'Quitadas ' + o.removed + ' capas.' : 'Listo.', 'ok'); });
     });
     var k = h('button', '', 'Dejar'); k.type = 'button'; k.addEventListener('click', function () { t.hidden = true; });
     t.appendChild(b); t.appendChild(k);
-    var foot = $('app').querySelector('.foot'); t.style.bottom = (foot.offsetHeight + 12) + 'px';
+    var foot = $('foot'); t.style.bottom = (foot.offsetHeight + 12) + 'px';
     t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 9000);
   }
-  $('btnGenAll').addEventListener('click', function () { if (gen && gen.only) { return; } generate(false); });
-  $('btnGenSel').addEventListener('click', function () { if (gen && !gen.only) { return; } generate(true); });
 
   // ================= teclado =================
   function stepWord(dir, extend) {
@@ -1976,11 +2293,11 @@
     var tag = (ev.target && ev.target.tagName) || '', typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
     if (ev.key === 'Escape') {
       if (menuOpen()) { closeMenu(); } else if (!$('keys').hidden) { $('keys').hidden = true; } else if (!$('settings').hidden) { $('btnCloseSettings').click(); }
-      else if (mon.playing) { stopPlay(); } else { Model.clearSel(sel); render(); }
+      else if (mon.playing) { stopPlay(); } else if (ui.step === 'frases' && selSis().length) { ui.fsel = {}; render(); } else { Model.clearSel(sel); render(); }
       return;
     }
     if (typing) { return; }
-    var mod = ev.ctrlKey || ev.metaKey, k = ev.key, has = Model.selCount(st, sel) > 0, ed = ui.tab === 'editor' && $('settings').hidden && $('keys').hidden;
+    var mod = ev.ctrlKey || ev.metaKey, k = ev.key, has = Model.selCount(st, sel) > 0, ed = ui.tab === 'editor' && ui.step === 'diseno' && $('settings').hidden && $('keys').hidden;
     if (mod && (k === 'z' || k === 'Z')) { ev.preventDefault(); if (ev.shiftKey) { redo(); } else { undo(); } return; }
     if (mod && (k === 'y' || k === 'Y')) { ev.preventDefault(); redo(); return; }
     if (!ed) { return; }
@@ -2067,12 +2384,12 @@
   pstore.load();
   (function () {
     var saved = lsGet('escaleraSubs3.edit', null);
-    if (saved && saved.seqs && saved.seqs.length) { st = saved; Model.reseed(st); }
+    if (saved && saved.seqs && saved.seqs.length) { st = saved; Model.reseed(st); if (st.based === undefined) { st.based = true; } ui.step = lsGet('laddersu.step', 'texto'); if (!st.based && ui.step !== 'texto') { ui.step = 'frases'; } }
   })();
   render(); renderFontPickers();
   loadFonts();
   refreshComp();
   setInterval(refreshComp, 3000);
   // utilidades para pruebas
-  window.__ES = { checkUpdates: checkUpdates, showUpdate: showUpdate, get st() { return st; }, get sel() { return sel; }, get S() { return S; }, pstore: pstore, processSRT: processSRT, get hits() { return mon.hits; } };
+  window.__ES = { goStep: goStep, get ui() { return ui; }, checkUpdates: checkUpdates, showUpdate: showUpdate, get st() { return st; }, get sel() { return sel; }, get S() { return S; }, pstore: pstore, processSRT: processSRT, get hits() { return mon.hits; } };
 })();

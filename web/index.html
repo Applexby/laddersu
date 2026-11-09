@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="/assets/site.css?v=5">
+<link rel="stylesheet" href="/assets/site.css?v=6">
 <script>
 /* la pagina se arma sola al entrar (assets/build.js). Si algo falla, a los 9 s se muestra todo igual. */
 (function () { try {
@@ -83,16 +83,16 @@
       </div>
       <div class="tourGrid">
         <div class="tourList" role="tablist" aria-label="Partes del panel">
-          <button type="button" role="tab" data-shot="editor" aria-selected="true"><b>Editor</b><span>Tu SRT agrupado en frases, con la vista previa arriba. Un clic elige una palabra; ★ marca la palabra clave.</span><i class="bar"></i></button>
-          <button type="button" role="tab" data-shot="menu" aria-selected="false"><b>Clic derecho</b><span>Animación, estilo, color, fuente, sonido y plantillas, en submenús que se abren al lado.</span><i class="bar"></i></button>
-          <button type="button" role="tab" data-shot="ajustes" aria-selected="false"><b>Estilos y ajustes</b><span>Escalera, caja que recorre o una línea, con tamaños, márgenes y animación por defecto.</span><i class="bar"></i></button>
+          <button type="button" role="tab" data-shot="texto" aria-selected="true"><b>1 · Texto</b><span>La transcripción en orden. Corrige, une o quita palabras y reemplaza un nombre en toda la edición.</span><i class="bar"></i></button>
+          <button type="button" role="tab" data-shot="frases" aria-selected="false"><b>2 · Frases</b><span>Elige la base: escalera, una línea o caja que recorre. Corta, une y mezcla estilos por tramos.</span><i class="bar"></i></button>
+          <button type="button" role="tab" data-shot="diseno" aria-selected="false"><b>3 · Diseño</b><span>La vista previa frase por frase: animación, color, fuente, sonido y plantillas para cada palabra.</span><i class="bar"></i></button>
+          <button type="button" role="tab" data-shot="generar" aria-selected="false"><b>4 · Generar</b><span>Revisa a qué composición va y qué se crea. Puedes generar solo las frases que cambiaron.</span><i class="bar"></i></button>
           <button type="button" role="tab" data-shot="biblioteca" aria-selected="false"><b>Biblioteca</b><span>Tus composiciones guardadas, ordenadas en grupos, listas para insertar en cualquier proyecto.</span><i class="bar"></i></button>
-          <button type="button" role="tab" data-shot="sonidos" aria-selected="false"><b>Sonidos</b><span>Clics, pops y golpes en el tiempo exacto de cada palabra, y tus propios .wav o .mp3.</span><i class="bar"></i></button>
         </div>
         <figure class="win" aria-live="polite">
           <div class="winBar" aria-hidden="true"><i></i><i></i><i></i><span>Laddersu</span></div>
           <div class="winBody">
-            <img id="tourImg" src="/assets/ui/editor-c.webp?v=5" alt="Panel de Laddersu: vista previa y frases del SRT" width="880" height="830">
+            <img id="tourImg" src="/assets/ui/texto-c.webp?v=6" alt="Panel de Laddersu: paso Texto" width="880" height="1200">
           </div>
         </figure>
         <p class="tourCap" id="tourCap"></p>
@@ -119,7 +119,7 @@
             <span class="c s">COMO</span><span class="c m">SERÍA</span><span class="c s">TU</span><span class="c k">★ EXPERIENCIA</span>
             <span class="c s">SI</span><span class="c k">★ ENTENDIERAS</span><span class="c m">TODO</span>
           </div>
-          <h3>Ajústalo en el panel</h3><p>Se agrupa en frases y se detectan tamaños y palabras clave. Cambia lo que quieras.</p>
+          <h3>Ajústalo en el panel</h3><p>Texto, frases y diseño, un paso a la vez. Tamaños y palabras clave se detectan solos.</p>
         </li>
         <li>
           <div class="fig tl" aria-hidden="true">
@@ -197,12 +197,24 @@
         </ol>
         <figure class="appWin" aria-label="La app Laddersu para actualizar">
           <div class="appBar"><span class="lights" aria-hidden="true"><i></i><i></i><i></i></span><span>Laddersu</span></div>
-          <div class="appBody">
-            <p class="sub">Actualizaciones del panel de After Effects</p>
-            <div class="appCard"><b>Hay una versión nueva</b><span>Instalada: 0.6.1 · Publicada: 0.6.4</span></div>
-            <div class="appBtns"><span class="ab main">Actualizar</span><span class="ab">Buscar de nuevo</span></div>
+          <div class="appBody two">
+            <div class="appSide">
+              <span class="k">Versión instalada</span>
+              <b class="ver">0.6.4</b>
+              <span class="st">Hay una versión nueva: 0.7.0</span>
+              <span class="ab main">Actualizar a 0.7.0</span>
+              <span class="ab">Buscar actualizaciones</span>
+              <span class="cr">Hecho por Applexby</span>
+            </div>
+            <div class="appNotes">
+              <b>Novedades</b>
+              <p><em>0.7.0</em> <i>Nueva</i></p>
+              <ul><li>Editor en cuatro pasos: Texto, Frases, Diseño y Generar.</li><li>Generar solo las frases que cambiaron.</li></ul>
+              <p><em>0.6.4</em></p>
+              <ul><li>App con botones a la izquierda, como en macOS.</li></ul>
+            </div>
           </div>
-          <figcaption>La app <b>Laddersu</b> queda en tu escritorio: ábrela y pulsa Actualizar cuando haya una versión nueva.</figcaption>
+          <figcaption>La app <b>Laddersu</b> queda en tu escritorio: ahí ves las novedades de cada versión y actualizas con un botón.</figcaption>
         </figure>
       </div>
       <p class="note">Windows puede mostrar “Windows protegió tu PC” porque el instalador no está firmado por una empresa. Pulsa <b>Más información</b> y luego <b>Ejecutar de todos modos</b>.</p>
@@ -230,7 +242,7 @@
   </div>
 </footer>
 
-<script src="/assets/site.js?v=5"></script>
-<script src="/assets/build.js?v=5"></script>
+<script src="/assets/site.js?v=6"></script>
+<script src="/assets/build.js?v=6"></script>
 </body>
 </html>

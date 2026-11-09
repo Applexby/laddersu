@@ -1,6 +1,7 @@
 ﻿// Laddersu - app de escritorio para actualizar el panel de After Effects.
 // Abre, compara la version instalada con la ultima publicada en GitHub y, si hay una nueva, la instala con un clic.
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -29,17 +30,18 @@ namespace Laddersu
 
     class MainForm : Form
     {
-        static readonly Color Bg = Color.FromArgb(19, 19, 21), Card = Color.FromArgb(30, 30, 34), Line = Color.FromArgb(48, 48, 54);
-        static readonly Color Text1 = Color.FromArgb(240, 240, 242), Mut = Color.FromArgb(150, 150, 160);
-        static readonly Color Violet = Color.FromArgb(124, 92, 255), Green = Color.FromArgb(74, 222, 128), Amber = Color.FromArgb(251, 191, 36);
+        static readonly Color Bg = Color.FromArgb(19, 19, 21), Side = Color.FromArgb(24, 24, 27), Card = Color.FromArgb(32, 32, 36), Line = Color.FromArgb(48, 48, 54);
+        static readonly Color Text1 = Color.FromArgb(240, 240, 242), Mut = Color.FromArgb(160, 160, 170), Dim = Color.FromArgb(120, 120, 130);
+        static readonly Color Violet = Color.FromArgb(124, 92, 255), Violet2 = Color.FromArgb(169, 150, 255), Green = Color.FromArgb(74, 222, 128), Amber = Color.FromArgb(251, 191, 36);
+        const int SW = 300;
 
-        readonly Label title = new Label(), state = new Label(), vers = new Label(), aeNote = new Label();
-        readonly TextBox notes = new TextBox();
+        readonly Label instVer = new Label(), state = new Label(), sub2 = new Label(), aeNote = new Label(), notesHead = new Label(), notesSub = new Label();
+        readonly RichTextBox notes = new RichTextBox();
         readonly ProgressBar bar = new ProgressBar();
-        readonly Button main = new Button(), again = new Button();
-        readonly LinkLabel web = new LinkLabel();
+        readonly Button main = new Button(), check = new Button();
         readonly bool justUpdated;
         Release latest;
+        List<ReleaseNote> history;
         string installed = "";
         bool busy;
 
@@ -48,55 +50,76 @@ namespace Laddersu
             justUpdated = updated;
             SuspendLayout();
             AutoScaleDimensions = new SizeF(96F, 96F);
+            AutoScaleMode = AutoScaleMode.Dpi;
             Text = "Laddersu";
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             FormBorderStyle = FormBorderStyle.None; MaximizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
-            AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(420, 360 + TitleBar.H);
+            ClientSize = new Size(940, 620);
             BackColor = Bg; ForeColor = Text1;
-            Font = new Font("Segoe UI", 9.75f);
+            Font = new Font("Segoe UI", 10f);
 
-            var logo = new PictureBox { Location = new Point(22, 20), Size = new Size(36, 36), SizeMode = PictureBoxSizeMode.Zoom, BackColor = Bg };
-            try { logo.Image = Icon.ExtractAssociatedIcon(Application.ExecutablePath).ToBitmap(); } catch { }
-            Controls.Add(logo);
-            title.Text = "Laddersu"; title.Font = new Font("Segoe UI Semibold", 15f); title.AutoSize = true; title.Location = new Point(64, 16);
-            Controls.Add(title);
-            var sub = new Label { Text = "Actualizaciones del panel de After Effects", ForeColor = Mut, AutoSize = true, Location = new Point(66, 44) };
-            Controls.Add(sub);
+            // ---------- columna izquierda ----------
+            var side = new Panel { Location = new Point(0, 0), Size = new Size(SW, 620 - TitleBar.H), BackColor = Side };
+            side.Paint += (s, e) => { using (var p = new Pen(Line)) { e.Graphics.DrawLine(p, side.Width - 1, 0, side.Width - 1, side.Height); } };
+            Controls.Add(side);
 
-            var card = new Panel { Location = new Point(22, 78), Size = new Size(376, 72), BackColor = Card };
+            var logo = new LogoMark { Location = new Point(28, 28), Size = new Size(34, 32), BackColor = Side };
+            side.Controls.Add(logo);
+            var name = new Label { Text = "Laddersu", Font = new Font("Segoe UI Semibold", 18f), AutoSize = true, Location = new Point(70, 22), BackColor = Side };
+            side.Controls.Add(name);
+            var tag = new Label { Text = "Subtítulos animados para AE", ForeColor = Mut, AutoSize = true, Location = new Point(72, 56), BackColor = Side, Font = new Font("Segoe UI", 9f) };
+            side.Controls.Add(tag);
+
+            var card = new Panel { Location = new Point(24, 100), Size = new Size(SW - 48, 132), BackColor = Card };
             card.Paint += (s, e) => { using (var p = new Pen(Line)) { e.Graphics.DrawRectangle(p, 0, 0, card.Width - 1, card.Height - 1); } };
-            state.Font = new Font("Segoe UI Semibold", 11.5f); state.AutoSize = false; state.Location = new Point(14, 12); state.Size = new Size(350, 24); state.BackColor = Card;
-            vers.ForeColor = Mut; vers.AutoSize = false; vers.Location = new Point(14, 40); vers.Size = new Size(350, 20); vers.BackColor = Card;
-            card.Controls.Add(state); card.Controls.Add(vers);
-            Controls.Add(card);
+            var lab = new Label { Text = "VERSIÓN INSTALADA", ForeColor = Dim, AutoSize = true, Location = new Point(16, 14), BackColor = Card, Font = new Font("Segoe UI Semibold", 8.25f) };
+            instVer.Font = new Font("Segoe UI Semibold", 24f); instVer.AutoSize = true; instVer.Location = new Point(13, 32); instVer.BackColor = Card; instVer.Text = "—";
+            state.Font = new Font("Segoe UI Semibold", 10.5f); state.AutoSize = false; state.Location = new Point(16, 80); state.Size = new Size(card.Width - 28, 22); state.BackColor = Card;
+            sub2.ForeColor = Mut; sub2.AutoSize = false; sub2.Location = new Point(16, 103); sub2.Size = new Size(card.Width - 28, 20); sub2.BackColor = Card; sub2.Font = new Font("Segoe UI", 9f);
+            card.Controls.Add(lab); card.Controls.Add(instVer); card.Controls.Add(state); card.Controls.Add(sub2);
+            side.Controls.Add(card);
 
-            var nl = new Label { Text = "Novedades", ForeColor = Mut, AutoSize = true, Location = new Point(22, 162) };
-            Controls.Add(nl);
-            notes.Multiline = true; notes.ReadOnly = true; notes.ScrollBars = ScrollBars.Vertical; notes.BorderStyle = BorderStyle.FixedSingle;
-            notes.BackColor = Card; notes.ForeColor = Text1; notes.Location = new Point(22, 182); notes.Size = new Size(376, 96); notes.TabStop = false;
-            Controls.Add(notes);
-
-            bar.Location = new Point(22, 286); bar.Size = new Size(376, 6); bar.Visible = false; bar.Style = ProgressBarStyle.Continuous;
-            Controls.Add(bar);
-            aeNote.ForeColor = Amber; aeNote.AutoSize = false; aeNote.Location = new Point(22, 284); aeNote.Size = new Size(376, 18); aeNote.Visible = false;
-            aeNote.Text = "After Effects está abierto: reinícialo después de actualizar.";
-            Controls.Add(aeNote);
-
-            Style(main, true); main.Location = new Point(22, 312); main.Size = new Size(170, 34); main.Text = "Actualizar"; main.Enabled = false;
+            Style(main, true); main.Location = new Point(24, 248); main.Size = new Size(SW - 48, 44); main.Text = "Actualizar"; main.Visible = false;
             main.Click += async (s, e) => await DoUpdate();
-            Controls.Add(main);
-            Style(again, false); again.Location = new Point(200, 312); again.Size = new Size(136, 34); again.Text = "Buscar de nuevo";
-            again.Click += async (s, e) => await Check();
-            Controls.Add(again);
-            web.Text = "Versiones"; web.AutoSize = true; web.LinkColor = Color.FromArgb(169, 150, 255); web.ActiveLinkColor = Text1; web.Location = new Point(344, 321);
-            web.LinkClicked += (s, e) => { try { Process.Start(Logic.ReleasesPage); } catch { } };
-            Controls.Add(web);
-            AcceptButton = main;
+            side.Controls.Add(main);
+            Style(check, false); check.Location = new Point(24, 300); check.Size = new Size(SW - 48, 40); check.Text = "Buscar actualizaciones";
+            check.Click += async (s, e) => await Check();
+            side.Controls.Add(check);
+            bar.Location = new Point(24, 350); bar.Size = new Size(SW - 48, 6); bar.Visible = false; bar.Style = ProgressBarStyle.Continuous;
+            side.Controls.Add(bar);
+            aeNote.ForeColor = Amber; aeNote.AutoSize = false; aeNote.Location = new Point(24, 350); aeNote.Size = new Size(SW - 48, 40); aeNote.Visible = false; aeNote.BackColor = Side;
+            aeNote.Font = new Font("Segoe UI", 9f);
+            aeNote.Text = "After Effects está abierto: reinícialo después de actualizar para ver los cambios.";
+            side.Controls.Add(aeNote);
+
+            int ly = 410;
+            foreach (var l in new[] { new[] { "Sitio web", Logic.WebUrl }, new[] { "Guía de uso", Logic.WebUrl + "/guia/" }, new[] { "Novedades en la web", Logic.WebUrl + "/novedades/" }, new[] { "Reportar un problema", Logic.WebUrl + "/consultas/" } })
+            {
+                var url = l[1];
+                var ll = new LinkLabel { Text = l[0], AutoSize = true, Location = new Point(24, ly), LinkColor = Violet2, ActiveLinkColor = Text1, LinkBehavior = LinkBehavior.HoverUnderline, BackColor = Side };
+                ll.LinkClicked += (s, e) => Open(url);
+                side.Controls.Add(ll); ly += 26;
+            }
+            var credit = new Label { Text = "Hecho por Applexby", ForeColor = Mut, AutoSize = true, Location = new Point(24, 620 - TitleBar.H - 52), BackColor = Side, Font = new Font("Segoe UI Semibold", 9f) };
+            var copy = new Label { Text = "© 2026 Applexby · Laddersu", ForeColor = Dim, AutoSize = true, Location = new Point(24, 620 - TitleBar.H - 32), BackColor = Side, Font = new Font("Segoe UI", 8.25f) };
+            side.Controls.Add(credit); side.Controls.Add(copy);
+
+            // ---------- novedades ----------
+            notesHead.Text = "Novedades"; notesHead.Font = new Font("Segoe UI Semibold", 16f); notesHead.AutoSize = true; notesHead.Location = new Point(SW + 32, 24);
+            Controls.Add(notesHead);
+            notesSub.Text = "Lo que trae cada versión"; notesSub.ForeColor = Mut; notesSub.AutoSize = true; notesSub.Location = new Point(SW + 34, 56);
+            Controls.Add(notesSub);
+            var box = new Panel { Location = new Point(SW + 28, 92), Size = new Size(940 - SW - 56, 620 - TitleBar.H - 92 - 28), BackColor = Card, Padding = new Padding(18, 14, 8, 14) };
+            box.Paint += (s, e) => { using (var p = new Pen(Line)) { e.Graphics.DrawRectangle(p, 0, 0, box.Width - 1, box.Height - 1); } };
+            notes.Dock = DockStyle.Fill; notes.ReadOnly = true; notes.BorderStyle = BorderStyle.None; notes.BackColor = Card; notes.ForeColor = Text1;
+            notes.ScrollBars = RichTextBoxScrollBars.Vertical; notes.TabStop = false; notes.DetectUrls = false; notes.Font = new Font("Segoe UI", 10.5f);
+            box.Controls.Add(notes);
+            Controls.Add(box);
 
             // barra de titulo propia (botones rojo, amarillo y verde a la izquierda, como en macOS)
             foreach (Control c in Controls) { c.Top += TitleBar.H; }
+            ClientSize = new Size(940, 620);
             var tb = new TitleBar(this); tb.Dock = DockStyle.Top;
             Controls.Add(tb);
             ResumeLayout(false);
@@ -130,56 +153,101 @@ namespace Laddersu
         static void Style(Button b, bool primary)
         {
             b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = primary ? 0 : 1; b.FlatAppearance.BorderColor = Line;
+            b.FlatAppearance.MouseOverBackColor = primary ? Color.FromArgb(109, 79, 240) : Color.FromArgb(44, 44, 50);
             b.BackColor = primary ? Violet : Card; b.ForeColor = Color.White; b.Cursor = Cursors.Hand;
-            b.Font = new Font("Segoe UI Semibold", 9.75f);
+            b.Font = new Font("Segoe UI Semibold", 10.5f);
         }
+        static void Open(string url) { try { Process.Start(url); } catch { } }
 
         void SetState(string st, Color c, string v)
         {
-            state.Text = st; state.ForeColor = c; vers.Text = v;
+            state.Text = st; state.ForeColor = c; sub2.Text = v;
+        }
+
+        // novedades con formato: version en grande, fecha, etiqueta y cada cambio con su punto
+        void ShowNotes()
+        {
+            notes.Clear();
+            var list = history;
+            if ((list == null || list.Count == 0) && latest != null) { list = new List<ReleaseNote> { new ReleaseNote { Version = latest.Version, Body = latest.Notes } }; }
+            if (list == null || list.Count == 0) { Add("No se pudieron cargar las novedades.", 10.5f, false, Mut); return; }
+            bool first = true;
+            foreach (var r in list)
+            {
+                if (!first) { Add("\n", 8f, false, Text1); }
+                first = false;
+                Add(r.Version, 15f, true, Text1);
+                string badge = "";
+                Color bc = Mut;
+                if (latest != null && r.Version == latest.Version && installed != "" && Logic.Compare(r.Version, installed) > 0) { badge = "   NUEVA"; bc = Amber; }
+                else if (r.Version == installed) { badge = "   INSTALADA"; bc = Green; }
+                if (badge != "") { Add(badge, 8.5f, true, bc); }
+                string d = Logic.SpanishDate(r.Date);
+                if (d != "") { Add("   " + d, 9.5f, false, Dim); }
+                Add("\n", 6f, false, Text1);
+                var bullets = Logic.Bullets(r.Body);
+                if (bullets.Count == 0) { bullets.Add("Mejoras y correcciones."); }
+                foreach (var bl in bullets)
+                {
+                    notes.SelectionStart = notes.TextLength; notes.SelectionIndent = 14; notes.SelectionHangingIndent = 14;
+                    Add("•  ", 10.5f, true, Violet2);
+                    foreach (var run in Logic.Runs(bl)) { Add(run.Key, 10.5f, run.Value, run.Value ? Text1 : Color.FromArgb(205, 205, 212)); }
+                    Add("\n", 4f, false, Text1);
+                    notes.SelectionStart = notes.TextLength; notes.SelectionIndent = 0; notes.SelectionHangingIndent = 0;
+                }
+            }
+            notes.SelectionStart = 0; notes.ScrollToCaret();
+        }
+        void Add(string t, float size, bool bold, Color c)
+        {
+            notes.SelectionStart = notes.TextLength; notes.SelectionLength = 0;
+            notes.SelectionFont = new Font(bold ? "Segoe UI Semibold" : "Segoe UI", size);
+            notes.SelectionColor = c;
+            notes.AppendText(t);
         }
 
         async System.Threading.Tasks.Task Check()
         {
             if (busy) { return; }
-            busy = true; main.Enabled = false; again.Enabled = false;
+            busy = true; main.Visible = false; check.Enabled = false; check.Text = "Buscando…";
             installed = Logic.InstalledVersion(Logic.ExtensionDir());
-            SetState("Buscando la última versión…", Text1, installed != "" ? "Instalada: " + installed : "El panel no está instalado en este equipo");
+            instVer.Text = installed != "" ? installed : "—";
+            SetState("Buscando la última versión…", Text1, "");
             try
             {
                 latest = await Logic.FetchLatest(Logic.LatestJson);
-                notes.Text = Logic.PlainNotes(latest.Notes);
-                string v = (installed != "" ? "Instalada: " + installed + "   ·   " : "") + "Publicada: " + latest.Version;
+                try { history = await Logic.FetchReleases(); } catch { history = null; }
                 if (installed == "")
                 {
-                    SetState("Laddersu no está instalado", Amber, v);
-                    main.Text = "Instalar " + latest.Version; main.Enabled = true;
+                    SetState("El panel no está instalado", Amber, "Última versión publicada: " + latest.Version);
+                    main.Text = "Instalar " + latest.Version; main.Visible = true;
                 }
                 else if (Logic.Compare(latest.Version, installed) > 0)
                 {
-                    SetState("Hay una versión nueva: " + latest.Version, Amber, v);
-                    main.Text = "Actualizar a " + latest.Version; main.Enabled = true;
+                    SetState("Hay una versión nueva: " + latest.Version, Amber, "A la derecha ves lo que trae.");
+                    main.Text = "Actualizar a " + latest.Version; main.Visible = true;
                 }
                 else
                 {
-                    SetState(justUpdated ? "Listo: tienes Laddersu " + installed : "Tienes la última versión", Green, v);
-                    main.Text = "Al día"; main.Enabled = false;
+                    SetState(justUpdated ? "Actualizado a la última versión" : "Tienes la última versión", Green, "Revisado " + DateTime.Now.ToString("HH:mm"));
                 }
+                ShowNotes();
             }
             catch (Exception ex)
             {
-                SetState("No se pudo revisar", Amber, "Revisa tu conexión a internet. (" + Short(ex) + ")");
+                SetState("No se pudo revisar", Amber, "Revisa tu conexión a internet.");
+                notes.Clear(); Add("No se pudieron cargar las novedades (" + Short(ex) + ").", 10.5f, false, Mut);
             }
-            aeNote.Visible = Logic.AfterEffectsOpen() && main.Enabled;
-            busy = false; again.Enabled = true;
+            aeNote.Visible = Logic.AfterEffectsOpen() && main.Visible;
+            busy = false; check.Enabled = true; check.Text = "Buscar actualizaciones";
         }
 
         async System.Threading.Tasks.Task DoUpdate()
         {
             if (busy || latest == null) { return; }
-            busy = true; main.Enabled = false; again.Enabled = false; aeNote.Visible = false;
+            busy = true; main.Enabled = false; check.Enabled = false; aeNote.Visible = false;
             bar.Visible = true; bar.Value = 0;
-            SetState("Descargando " + latest.Version + "…", Text1, vers.Text);
+            SetState("Descargando " + latest.Version + "…", Text1, "");
             try
             {
                 string dir = Path.Combine(Path.GetTempPath(), "Laddersu");
@@ -192,14 +260,27 @@ namespace Laddersu
             {
                 bar.Visible = false;
                 SetState("No se pudo actualizar", Amber, Short(ex));
-                busy = false; main.Enabled = true; again.Enabled = true;
+                busy = false; main.Enabled = true; check.Enabled = true;
             }
         }
 
         static string Short(Exception ex)
         {
             string m = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-            return m.Length > 90 ? m.Substring(0, 90) + "…" : m;
+            return m.Length > 70 ? m.Substring(0, 70) + "…" : m;
+        }
+    }
+
+    // el isotipo de Laddersu (tres escalones)
+    class LogoMark : Control
+    {
+        public LogoMark() { SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint | ControlStyles.SupportsTransparentBackColor, true); }
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics; float u = Math.Min(Width / 34f, Height / 32f);
+            using (var a = new SolidBrush(Color.FromArgb(124, 92, 255))) { g.FillRectangle(a, 0, 18 * u, 15 * u, 13 * u); }
+            using (var b = new SolidBrush(Color.FromArgb(169, 150, 255))) { g.FillRectangle(b, 9 * u, 9 * u, 15 * u, 13 * u); }
+            using (var c = new SolidBrush(Color.FromArgb(245, 165, 36))) { g.FillRectangle(c, 19 * u, 0, 15 * u, 13 * u); }
         }
     }
 

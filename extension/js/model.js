@@ -23,7 +23,7 @@ var Model = (function () {
       groupGap: 0.4, groupWeight: 4,
       editStyle: 'lockup', karSize: 'M', karBox: '#ffd400', karMove: 0.12, karRadius: 14, replacePrev: true,
       // estilos de una linea: frases cortas de lineWords palabras
-      lineWords: 2,
+      lineWords: 2, stairLen: 1, boxLen: 1,
       // "Una linea" (tradicional): fuente de la edicion, blanco, espacios normales, entra con la animacion de la edicion
       linFont: '', linSize: 64, linColor: '#ffffff', linKey: '#ffd400', linCenterY: 70, linShadow: true, linExit: false, linUpper: false,
       // APPLEXBY: rojo, minusculas, letras y palabras muy juntas, contorno blanco y sombra suave; entra con desenfoque
@@ -34,7 +34,7 @@ var Model = (function () {
   };
 
   // ---------- construccion ----------
-  M.HOST_VER = '0.6.4';
+  M.HOST_VER = '0.7.0';
   M.newId = function () { uid++; return uid; };
   // tras restaurar un estado guardado: evita ids repetidos
   M.reseed = function (st) {
@@ -65,54 +65,49 @@ var Model = (function () {
   // Estilos de una linea ("Una linea", APPLEXBY): frases cortas de S.lineWords palabras y sin palabra clave automatica.
   M.fromEntries = function (entries, S) {
     S = S || M.defaults();
-    var seqs = [], i, j;
-    if (ES.isLineStyle(S.editStyle)) {
-      var flat = [];
-      for (i = 0; i < entries.length; i++) { flat.push({ text: String(entries[i].text).replace(/^\s+|\s+$/g, ''), start: entries[i].start, end: entries[i].end }); }
-      var gs = M.shortGroups(flat, S);
-      for (i = 0; i < gs.length; i++) {
-        var w1 = [];
-        for (j = 0; j < gs[i].length; j++) { var c1 = ES.autoClassify([gs[i][j]])[0]; c1.size = 'M'; c1.brand = false; w1.push(M.makeWord(gs[i][j].text, gs[i][j].start, gs[i][j].end, c1)); }
-        seqs.push(M.makeSeq(w1));
-      }
-      return { seqs: seqs };
-    }
-    var raw = ES.groupSequences(entries, { gap: S.groupGap, maxWeight: S.groupWeight });
-    for (i = 0; i < raw.length; i++) {
-      var cl = ES.autoClassify(raw[i].words), ws = [];
-      for (j = 0; j < raw[i].words.length; j++) {
-        var w = raw[i].words[j];
-        ws.push(M.makeWord(w.text, w.start, w.end, cl[j]));
-      }
-      seqs.push(M.makeSeq(ws));
-    }
-    return { seqs: seqs };
+    var flat = [], i;
+    for (i = 0; i < entries.length; i++) { flat.push(M.makeWord(String(entries[i].text).replace(/^\s+|\s+$/g, ''), entries[i].start, entries[i].end, { size: 'M' })); }
+    var st = { seqs: [] };
+    M.fillGroups(st, M.groupFor(flat, S.editStyle, S), S.editStyle, S);
+    return st;
   };
   M.shortGroups = function (items, S) {
     return ES.groupShort(items, { maxWords: S.lineWords || 2, gap: S.groupGap == null ? 0.4 : S.groupGap, maxChars: S.lineChars || 18 });
   };
+  // largo de los grupos segun el estilo: escalera 3-6 palabras, caja que recorre 4-8, una linea 1-3
+  M.STAIR_W = [3, 4, 5.5];
+  M.BOX_W = [5, 6.5, 8.5];
+  M.groupFor = function (words, style, S) {
+    if (ES.isLineStyle(style)) { return M.shortGroups(words, S); }
+    var w = style === 'karaoke' ? M.BOX_W[S.boxLen == null ? 1 : S.boxLen] : (S.stairLen == null ? (S.groupWeight || 4) : M.STAIR_W[S.stairLen]);
+    var raw = ES.groupSequences(words, { gap: S.groupGap, maxWeight: w }), out = [], k = 0, q, r;
+    for (q = 0; q < raw.length; q++) { var g = []; for (r = 0; r < raw[q].words.length; r++) { g.push(words[k++]); } out.push(g); }
+    return out;
+  };
+  // crea las frases de unos grupos de palabras con el estilo dado (tamanos y palabra clave automaticos si hacen falta)
+  M.fillGroups = function (st, groups, style, S, into, at) {
+    var line = ES.isLineStyle(style), made = [], gi, w;
+    for (gi = 0; gi < groups.length; gi++) {
+      var g = groups[gi];
+      if (line) { for (w = 0; w < g.length; w++) { g[w].c.brand = false; g[w].c.br = false; } }
+      else { var cl = ES.autoClassify(g); for (w = 0; w < g.length; w++) { g[w].c.size = cl[w].size; g[w].c.brand = cl[w].brand === true; } }
+      var sq = M.makeSeq(g); sq.style = style === S.editStyle ? '' : style;
+      made.push(sq);
+    }
+    var list = into || st.seqs;
+    Array.prototype.splice.apply(list, [at == null ? list.length : at, 0].concat(made));
+    return made;
+  };
+  M.effStyle = function (seq, S) { return seq.style || S.editStyle || 'lockup'; };
 
   // Rearma las frases para el estilo de la edicion (al pasar de escalera/caja a una linea o al reves).
   // Las palabras se conservan con sus ajustes (color, fuente, sonido...); se pierden los cortes y estilos por frase.
   M.regroup = function (st, S) {
-    var line = ES.isLineStyle(S.editStyle), out = [], run = [], i, j;
+    var out = [], run = [], i, j;
     function flush() {
       if (!run.length) { return; }
       run.sort(function (a, b) { return a.start - b.start; });
-      var groups;
-      if (line) {
-        groups = M.shortGroups(run, S);
-        for (var z = 0; z < run.length; z++) { run[z].c.brand = false; run[z].c.br = false; }
-      } else {
-        var raw = ES.groupSequences(run, { gap: S.groupGap, maxWeight: S.groupWeight }), k = 0, q;
-        groups = [];
-        for (q = 0; q < raw.length; q++) { var g = [], r; for (r = 0; r < raw[q].words.length; r++) { g.push(run[k++]); } groups.push(g); }
-      }
-      for (var gi = 0; gi < groups.length; gi++) {
-        var sq = M.makeSeq(groups[gi]);
-        if (!line) { var cl = ES.autoClassify(groups[gi]), w; for (w = 0; w < groups[gi].length; w++) { groups[gi][w].c.size = cl[w].size; groups[gi][w].c.brand = cl[w].brand === true; } }
-        out.push(sq);
-      }
+      M.fillGroups(st, M.groupFor(run, S.editStyle, S), S.editStyle, S, out);
       run = [];
     }
     // las frases con plantilla (presentacion) se quedan como estan; se rearma lo que hay entre ellas
@@ -125,6 +120,97 @@ var Model = (function () {
     st.seqs = out;
     return out.length;
   };
+  // Rearma solo las frases indicadas con otro estilo (para mezclar estilos en un mismo video).
+  // Cada tramo de frases seguidas se reagrupa por separado; las frases con plantilla no se tocan.
+  M.regroupRange = function (st, sis, style, S) {
+    var set = {}, i, runs = [], cur = null;
+    for (i = 0; i < sis.length; i++) { set[sis[i]] = true; }
+    for (i = 0; i < st.seqs.length; i++) {
+      if (set[i] && !st.seqs[i].pres) { if (!cur) { cur = { at: i, n: 0 }; runs.push(cur); } cur.n++; }
+      else { cur = null; }
+    }
+    var made = 0;
+    for (i = runs.length - 1; i >= 0; i--) {
+      var r = runs[i], words = [], k, j;
+      for (k = r.at; k < r.at + r.n; k++) { for (j = 0; j < st.seqs[k].words.length; j++) { words.push(st.seqs[k].words[j]); } }
+      st.seqs.splice(r.at, r.n);
+      made += M.fillGroups(st, M.groupFor(words, style, S), style, S, st.seqs, r.at).length;
+    }
+    return made;
+  };
+
+  // ---------- paso Texto: unir, separar, buscar y reemplazar ----------
+  // une la palabra con la siguiente (en el orden del video): "after" + "effects" -> "after effects"
+  M.joinWords = function (st, id) {
+    var ids = M.allIds(st), k = ids.indexOf(id), a, b;
+    if (k < 0 || k >= ids.length - 1) { return false; }
+    a = M.find(st, id); b = M.find(st, ids[k + 1]);
+    a.w.text = a.w.text + ' ' + b.w.text; a.w.end = Math.max(a.w.end, b.w.end);
+    st.seqs[b.si].words.splice(b.wi, 1);
+    if (!st.seqs[b.si].words.length) { st.seqs.splice(b.si, 1); } else { M.fitTimes(st.seqs[b.si]); }
+    M.fitTimes(st.seqs[M.find(st, id).si]);
+    return true;
+  };
+  // separa una palabra que tiene espacios ("after effects") en varias, repartiendo su tiempo
+  M.splitWord = function (st, id) {
+    var f = M.find(st, id);
+    if (!f || !/\s/.test(f.w.text.replace(/^\s+|\s+$/g, ''))) { return false; }
+    return M.editText(st, id, f.w.text);
+  };
+  // reemplaza texto en todas las palabras (sin distinguir mayusculas; palabra completa por defecto)
+  M.replaceAll = function (st, find, repl, opts) {
+    opts = opts || {};
+    find = String(find || '').replace(/^\s+|\s+$/g, '');
+    if (!find) { return 0; }
+    var esc = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var re = new RegExp(opts.partial ? esc : '^' + esc + '([^\\w\\u00c0-\\u024f]*)$', 'i'), n = 0, ids = M.allIds(st), k;
+    for (k = ids.length - 1; k >= 0; k--) {
+      var f = M.find(st, ids[k]);
+      if (!f || !re.test(f.w.text)) { continue; }
+      var nt = opts.partial ? f.w.text.replace(new RegExp(esc, 'gi'), repl) : f.w.text.replace(re, function (m0, tail) { return repl + (tail || ''); });
+      if (!nt.replace(/\s+/g, '')) { st.seqs[f.si].words.splice(f.wi, 1); if (!st.seqs[f.si].words.length) { st.seqs.splice(f.si, 1); } else { M.fitTimes(st.seqs[f.si]); } }
+      else { M.editText(st, ids[k], nt); }
+      n++;
+    }
+    return n;
+  };
+  // parrafos para el paso Texto: corta tras una pausa larga o un final de oracion
+  M.paragraphs = function (st, gap) {
+    var all = [], i, j, out = [], cur = null;
+    gap = gap == null ? 0.6 : gap;
+    for (i = 0; i < st.seqs.length; i++) { for (j = 0; j < st.seqs[i].words.length; j++) { all.push(st.seqs[i].words[j]); } }
+    for (i = 0; i < all.length; i++) {
+      var w = all[i], prev = all[i - 1];
+      if (!cur || (prev && (w.start - prev.end > gap || /[.?!\u2026]["')\]]*$/.test(prev.text)))) { cur = { start: w.start, words: [] }; out.push(cur); }
+      cur.words.push(w);
+    }
+    return out;
+  };
+
+  // ---------- generar solo lo que cambio ----------
+  function hashStr(s) { var h = 5381, i; for (i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) | 0; } return (h >>> 0).toString(36); }
+  M.seqKey = function (seq) { return seq.words.map(function (w) { return w.id; }).join('.'); };
+  M.seqHash = function (seq, S) {
+    return hashStr(JSON.stringify([seq.words.map(function (w) { return [w.text, w.start, w.end, w.c]; }), M.effStyle(seq, S), seq.align || '', seq.pres || '']));
+  };
+  M.cfgHash = function (S) { var c = {}, k; for (k in S) { if (S.hasOwnProperty(k) && k !== 'replacePrev') { c[k] = S[k]; } } return hashStr(JSON.stringify(c)); };
+  M.markGenerated = function (st, S) {
+    var m = {}, i; for (i = 0; i < st.seqs.length; i++) { m[M.seqKey(st.seqs[i])] = M.seqHash(st.seqs[i], S); }
+    st.lastGen = { cfg: M.cfgHash(S), seqs: m };
+  };
+  // indices de frases nuevas o cambiadas desde la ultima generacion; null = hay que generar todo
+  // (nunca se genero, cambiaron los ajustes o alguna frase de antes ya no existe)
+  M.changedSeqs = function (st, S) {
+    var lg = st.lastGen, out = [], seen = {}, i, k;
+    if (!lg || lg.cfg !== M.cfgHash(S)) { return null; }
+    for (i = 0; i < st.seqs.length; i++) {
+      var key = M.seqKey(st.seqs[i]); seen[key] = true;
+      if (lg.seqs[key] !== M.seqHash(st.seqs[i], S)) { out.push(i); }
+    }
+    for (k in lg.seqs) { if (lg.seqs.hasOwnProperty(k) && !seen[k]) { return null; } }
+    return out;
+  };
+
   // familia de agrupado del estilo: 'line' (frases cortas) o 'block' (escalera / caja)
   M.groupFamily = function (style) { return ES.isLineStyle(style) ? 'line' : 'block'; };
 
@@ -537,7 +623,7 @@ var Model = (function () {
       for (j = 0; j < s.words.length; j++) { ws.push({ t: s.words[j].text, s: s.words[j].start, e: s.words[j].end, c: s.words[j].c }); }
       seqs.push({ align: s.align, pres: s.pres, style: s.style || '', w: ws });
     }
-    return { escalera: 3, settings: S, seqs: seqs };
+    return { escalera: 3, settings: S, src: st.src || null, seqs: seqs };
   };
   M.importEdit = function (data) {
     var st = { seqs: [] }, i, j;
@@ -548,6 +634,7 @@ var Model = (function () {
       var s = M.makeSeq(ws); s.align = d.align || ''; s.pres = d.pres || ''; s.style = d.style || '';
       st.seqs.push(s);
     }
+    st.src = data.src || { name: 'edición importada' }; st.based = true;
     return { st: st, settings: data.settings || null };
   };
 

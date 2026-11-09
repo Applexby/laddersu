@@ -33,22 +33,22 @@
 
   // ---------- el panel por dentro: capturas reales con puntos que explican cada parte ----------
   var TOUR = {
-    editor: 'Vista previa y frases del SRT', menu: 'Menú de clic derecho con el submenú de animaciones',
-    ajustes: 'Estilo de la edición', biblioteca: 'Biblioteca de composiciones con grupos', sonidos: 'Biblioteca de sonidos por categoría'
+    texto: 'paso Texto, la transcripción', frases: 'paso Frases, estilos por tramo', diseno: 'paso Diseño con vista previa',
+    generar: 'paso Generar con el resumen', biblioteca: 'Biblioteca de composiciones con grupos'
   };
   var tabs = [].slice.call(document.querySelectorAll('.tourList [data-shot]'));
   var timg = document.getElementById('tourImg'), tcap = document.getElementById('tourCap');
   if (tabs.length && timg) {
     var ti = 0, t0 = performance.now(), paused = false, DUR = 6500;
     // precarga
-    tabs.forEach(function (b) { var im = new Image(); im.src = '/assets/ui/' + b.getAttribute('data-shot') + '-c.webp?v=4'; });
+    tabs.forEach(function (b) { var im = new Image(); im.src = '/assets/ui/' + b.getAttribute('data-shot') + '-c.webp?v=6'; });
     var pick = function (i, user) {
       ti = (i + tabs.length) % tabs.length; t0 = performance.now();
       var b = tabs[ti], k = b.getAttribute('data-shot');
       tabs.forEach(function (x, j) { x.setAttribute('aria-selected', j === ti ? 'true' : 'false'); x.style.setProperty('--p', 0); });
       timg.classList.add('swap');
       setTimeout(function () {
-        timg.src = '/assets/ui/' + k + '-c.webp?v=4'; timg.alt = 'Panel de Laddersu: ' + TOUR[k];
+        timg.src = '/assets/ui/' + k + '-c.webp?v=6'; timg.alt = 'Panel de Laddersu: ' + TOUR[k];
         timg.classList.remove('swap');
       }, user ? 140 : 220);
       if (tcap) { tcap.textContent = b.querySelector('span').textContent; }

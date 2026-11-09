@@ -1,5 +1,14 @@
 # Cambios
 
+## [0.7.0] - 2026-11-09
+- **Editor en cuatro pasos**: Texto › Frases › Diseño › Generar. Cada paso muestra solo lo que necesitas y todos editan lo mismo: lo que cambias en uno se ve en los demás, con Deshacer en todos.
+- **Texto**: la transcripción en orden. Corrige, une con la siguiente, separa o quita palabras, y busca y reemplaza en toda la edición.
+- **Frases**: eliges la base (Escalera, Una línea o Caja que recorre) y el largo de las frases. Corta entre palabras con un clic y pasa un tramo a otro estilo para mezclarlos; solo ese tramo se reagrupa.
+- **Diseño**: vista previa frase por frase y un inspector abajo con animación, estilo, color, fuente, sonido y plantilla, aplicable a la palabra, a la frase o a todas las del mismo estilo. El aspecto de cada estilo está en Ajustes.
+- **Generar**: resumen antes de crear (composición, frases, capas, sonidos), avisos con su arreglo, progreso con Detener y resultado con "Copiar detalle para soporte". Nuevo: **Solo las frases que cambiaron**.
+- Se quitan el Registro y la barra fija de abajo; Guardar y abrir edición pasan al menú ⋯.
+- **App Laddersu más grande**: ventana amplia con las novedades de cada versión, tu versión instalada, **Buscar actualizaciones**, enlaces a la web, la guía y los reportes, y créditos de Applexby.
+
 ## [0.6.4] - 2026-11-09
 - App Laddersu con barra de título propia: botones rojo (cerrar), amarillo (minimizar) y verde a la izquierda, como en macOS. Se arrastra desde la barra.
 - Web: el panel se muestra por partes, más limpio; la página se arma con reglas, guías y agentes que se mueven al azar.

@@ -28,6 +28,17 @@ namespace Laddersu
             bool threw = false; try { Logic.ParseLatest("{\"version\":\"1\"}"); } catch { threw = true; }
             Check(threw, "latest.json sin instalador da error");
 
+            string relJson = "[{\"tag_name\":\"v0.6.4\",\"published_at\":\"2026-11-09T20:00:00Z\",\"body\":\"- **App** nueva\\r\\n- Otra cosa\",\"draft\":false,\"prerelease\":false}," +
+                         "{\"tag_name\":\"v0.7.0\",\"published_at\":\"2026-11-10T20:00:00Z\",\"body\":\"## [0.7.0]\\n- Pasos\",\"draft\":false,\"prerelease\":false}," +
+                         "{\"tag_name\":\"v0.8.0\",\"published_at\":\"2026-11-11T20:00:00Z\",\"body\":\"x\",\"draft\":true,\"prerelease\":false}]";
+            var rl = Logic.ParseReleases(relJson);
+            Check(rl.Count == 2 && rl[0].Version == "0.7.0" && rl[1].Version == "0.6.4", "lista de versiones, la mas nueva primero y sin borradores");
+            Check(Logic.SpanishDate(rl[0].Date) == "10 de noviembre de 2026", "fecha en espanol");
+            var bl = Logic.Bullets(rl[1].Body);
+            Check(bl.Count == 2 && bl[0] == "**App** nueva", "novedades por linea");
+            var runs = Logic.Runs(bl[0]);
+            Check(runs.Count == 2 && runs[0].Key == "App" && runs[0].Value && runs[1].Key == " nueva" && !runs[1].Value, "negritas");
+
             string dir = Path.Combine(Path.GetTempPath(), "laddersu-test-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(dir);
             Check(Logic.InstalledVersion(dir) == "", "sin panel instalado");
@@ -65,6 +76,12 @@ namespace Laddersu
             {
                 var lat = Logic.FetchLatest(Logic.LatestJson).Result;
                 Check(lat.Version != "" && lat.ExeUrl.StartsWith("https://github.com/"), "lee la version publicada en GitHub (" + lat.Version + ")");
+                try
+                {
+                    var all = Logic.FetchReleases().Result;
+                    Check(all.Count >= 1 && all[0].Version == lat.Version, "lee el historial de versiones (" + all.Count + ")");
+                }
+                catch (Exception ex) { Console.WriteLine("--   historial no disponible ahora (" + (ex.InnerException ?? ex).Message + "): la app usa las notas de latest.json"); }
             }
             try { Directory.Delete(dir, true); } catch { }
             Console.WriteLine(ok + " pruebas de la app OK, " + fails + " fallos");

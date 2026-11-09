@@ -62,7 +62,15 @@
   <header class="top">
     <h1 class="logo">Laddersu</h1>
     <button id="compBadge" class="comp" type="button" title="Composición activa de After Effects">sin composición</button>
-    <button id="btnKeys" class="iconBtn" type="button" title="Atajos de teclado (?)" aria-label="Atajos de teclado"><svg class="ic"><use href="#i-keys"/></svg></button>
+    <div class="menuHost">
+      <button id="btnMore" class="iconBtn" type="button" title="Más opciones" aria-label="Más opciones" aria-haspopup="true" aria-expanded="false"><svg class="ic"><use href="#i-more"/></svg></button>
+      <div id="moreMenu" class="pop right" hidden>
+        <button type="button" id="btnSaveEdit"><b>Guardar edición</b><small>Un archivo .escedit para seguir otro día</small></button>
+        <label><b>Abrir edición</b><small>Un archivo .escedit guardado antes</small><input id="editFile" type="file" accept=".escedit,.json" hidden></label>
+        <button type="button" id="btnKeys"><b>Atajos de teclado</b><small>Tecla ?</small></button>
+        <button type="button" id="btnNew"><b>Empezar de nuevo</b><small>Quita el SRT y todo lo editado</small></button>
+      </div>
+    </div>
     <button id="btnSettings" class="iconBtn" type="button" title="Ajustes" aria-label="Ajustes"><svg class="ic"><use href="#i-gear"/></svg></button>
   </header>
 
@@ -73,76 +81,112 @@
     <button class="tab" role="tab" data-tab="library" aria-selected="false">Biblioteca</button>
   </nav>
 
-  <!-- ============ EDITOR ============ -->
+  <!-- ============ EDITOR: 4 pasos ============ -->
   <section id="tab-editor" class="page">
-    <div class="toolbar" id="toolbar">
-      <label class="tb primary" title="Importar el SRT palabra por palabra de Premiere">
-        <svg class="ic"><use href="#i-import"/></svg><span>Importar SRT</span>
-        <input id="srtFile" type="file" accept=".srt,.txt" hidden>
-      </label>
-      <span class="tgroup">
-        <button class="tb icon" id="btnCut" type="button" title="Cortar la frase antes de la palabra elegida" aria-label="Cortar"><svg class="ic"><use href="#i-cut"/></svg></button>
-        <button class="tb icon" id="btnJoin" type="button" title="Unir la frase con la siguiente" aria-label="Unir"><svg class="ic"><use href="#i-join"/></svg></button>
-        <button class="tb icon" id="btnClean" type="button" title="Quitar efectos (de lo elegido o de todo)" aria-label="Limpiar"><svg class="ic"><use href="#i-eraser"/></svg></button>
-      </span>
-      <div class="menuHost">
-        <button class="tb" id="btnSizes" type="button" aria-haspopup="true" aria-expanded="false" title="Detectar tamaños y palabras clave"><svg class="ic"><use href="#i-wand"/></svg><span>Tamaños</span></button>
-        <div id="sizesMenu" class="pop" hidden>
-          <button type="button" id="btnLocal"><b>Reglas locales</b><small>Sin IA ni internet</small></button>
-          <button type="button" id="btnCopyPrompt"><b>Copiar prompt para IA</b><small>Pégalo en tu IA favorita</small></button>
-          <button type="button" id="btnPasteJSON"><b>Pegar respuesta de la IA</b><small>JSON con tamaños y ★</small></button>
-        </div>
-      </div>
-      <span class="grow"></span>
+    <div class="stepRow">
+      <nav id="stepper" class="stepper" aria-label="Pasos">
+        <button type="button" class="stp" data-step="texto"><b>1</b><span>Texto</span></button>
+        <button type="button" class="stp" data-step="frases"><b>2</b><span>Frases</span></button>
+        <button type="button" class="stp" data-step="diseno"><b>3</b><span>Diseño</span></button>
+        <button type="button" class="stp" data-step="generar"><b>4</b><span>Generar</span></button>
+      </nav>
       <span class="tgroup">
         <button class="tb icon" id="btnUndo" type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer"><svg class="ic"><use href="#i-undo"/></svg></button>
         <button class="tb icon" id="btnRedo" type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer"><svg class="ic"><use href="#i-redo"/></svg></button>
       </span>
     </div>
-    <div class="fontRow">
-      <button class="fontBtn" id="btnFont" type="button" title="Fuente por defecto de toda la edición"><svg class="ic"><use href="#i-type"/></svg><span id="fontLabel">Fuente por defecto</span><svg class="ic chev"><use href="#i-chev"/></svg></button>
-    </div>
-    <div id="fontPop" class="pop wide" hidden></div>
 
-    <div id="aiBox" class="card" hidden>
-      <div class="cardHead"><b>Respuesta de la IA</b><button id="btnCloseAI" class="iconBtn" type="button" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button></div>
-      <textarea id="aiJSON" rows="5" placeholder='{"seqs":[{"n":1,"words":[{"w":"palabra","size":"M","brand":false}]}]}'></textarea>
-      <button id="btnApplyJSON" class="pill" type="button">Aplicar</button>
-    </div>
-
-    <div id="monitor" class="monitor" hidden>
-      <div class="monHead">
-        <button id="monToggle" class="monTitle" type="button" aria-expanded="true"><svg class="ic"><use href="#i-eye"/></svg><span id="monTitle">Vista previa</span></button>
-        <span id="monMeta" class="monMeta"></span>
-        <span class="grow"></span>
-        <button id="monPrev" class="iconBtn" type="button" title="Frase anterior" aria-label="Frase anterior"><svg class="ic"><use href="#i-back"/></svg></button>
-        <button id="monPlay" class="iconBtn play" type="button" title="Reproducir la entrada (Espacio)" aria-label="Reproducir"><svg class="ic"><use href="#i-play"/></svg></button>
-        <button id="monNext" class="iconBtn" type="button" title="Frase siguiente" aria-label="Frase siguiente"><svg class="ic"><use href="#i-chev"/></svg></button>
+    <!-- 1 · TEXTO -->
+    <div id="step-texto" class="stepView">
+      <div id="empty" class="empty">
+        <div class="stepHead"><h2>Trae tus subtítulos</h2><p>El SRT palabra por palabra que exportaste de Premiere.</p></div>
+        <div class="drop" id="dropZone">
+          <span class="dropIc"><svg class="ic big"><use href="#i-import"/></svg></span>
+          <b>Arrastra el archivo .srt aquí</b>
+          <label class="pill">Elegir archivo<input id="srtFile" type="file" accept=".srt,.txt" hidden></label>
+          <details class="paste"><summary>o pega el texto del SRT</summary>
+            <textarea id="srtPaste" rows="5" placeholder="1&#10;00:00:00,066 --> 00:00:00,333&#10;Como"></textarea>
+            <button id="btnParse" class="pill" type="button">Procesar</button>
+          </details>
+        </div>
+        <p class="tip"><svg class="ic"><use href="#i-eye"/></svg><span>En Premiere: <b>Subtítulos › Exportar a archivo SRT</b>, con una palabra por subtítulo.</span></p>
       </div>
-      <div class="monBody" id="monBody"><canvas id="monCanvas" aria-label="Vista previa de la frase"></canvas></div>
-    </div>
-
-    <div id="empty" class="empty">
-      <div class="drop" id="dropZone">
-        <svg class="ic big"><use href="#i-import"/></svg>
-        <b>Importa el SRT de Premiere</b>
-        <span>Exporta los subtítulos palabra por palabra y suéltalos aquí, o usa <i>Importar SRT</i>.</span>
+      <div id="textoView" hidden>
+        <div class="srcCard">
+          <span class="srcIc">SRT</span>
+          <span class="srcTx"><b id="srcName">subtitulos.srt</b><small id="srcMeta"></small></span>
+          <label class="pill ghost small">Reemplazar<input id="srtFile2" type="file" accept=".srt,.txt" hidden></label>
+          <button id="btnClear" class="iconBtn" type="button" title="Quitar el SRT y empezar de nuevo" aria-label="Quitar el SRT"><svg class="ic"><use href="#i-trash"/></svg></button>
+        </div>
+        <div class="findRow">
+          <input id="findIn" type="text" placeholder="Buscar" aria-label="Buscar palabra">
+          <input id="replIn" type="text" placeholder="Reemplazar por" aria-label="Reemplazar por">
+          <button id="btnReplace" class="pill small" type="button">Reemplazar</button>
+        </div>
+        <div id="transcript" class="transcript" aria-label="Texto del SRT"></div>
+        <p class="tip"><span>Clic en una palabra para corregirla, unirla con la siguiente, separarla o quitarla. Cada bloque empieza tras una pausa.</span></p>
       </div>
-      <details class="paste"><summary>Pegar el texto del SRT</summary>
-        <textarea id="srtPaste" rows="5" placeholder="1&#10;00:00:00,066 --> 00:00:00,333&#10;Como"></textarea>
-        <button id="btnParse" class="pill" type="button">Procesar</button>
-      </details>
-      <ol class="steps">
-        <li><b>Importa</b> el SRT: se agrupa en frases y se detectan tamaños y palabras clave.</li>
-        <li><b>Ajusta</b> lo que quieras: clic derecho sobre las palabras o la barra de abajo.</li>
-        <li><b>Genera</b> la edición en la composición activa.</li>
-      </ol>
     </div>
 
-    <div id="seqs" class="seqs" aria-label="Frases"></div>
+    <!-- 2 · FRASES -->
+    <div id="step-frases" class="stepView" hidden>
+      <div id="baseView"></div>
+      <div id="frasesView" hidden>
+        <div class="frHead">
+          <div class="frStats" id="frStats"></div>
+          <button id="btnBase" class="link" type="button">Cambiar la base</button>
+        </div>
+        <div id="frBar" class="frBar" aria-hidden="true"></div>
+        <div id="frList" class="frList" aria-label="Frases"></div>
+      </div>
+    </div>
+
+    <!-- 3 · DISENO -->
+    <div id="step-diseno" class="stepView" hidden>
+      <div class="toolbar" id="toolbar">
+        <div class="fontRow">
+          <button class="fontBtn" id="btnFont" type="button" title="Fuente por defecto de toda la edición"><svg class="ic"><use href="#i-type"/></svg><span id="fontLabel">Fuente por defecto</span><svg class="ic chev"><use href="#i-chev"/></svg></button>
+        </div>
+        <div class="menuHost">
+          <button class="tb" id="btnSizes" type="button" aria-haspopup="true" aria-expanded="false" title="Detectar tamaños y palabras clave"><svg class="ic"><use href="#i-wand"/></svg><span>Tamaños</span></button>
+          <div id="sizesMenu" class="pop" hidden>
+            <button type="button" id="btnLocal"><b>Reglas locales</b><small>Sin IA ni internet</small></button>
+            <button type="button" id="btnCopyPrompt"><b>Copiar prompt para IA</b><small>Pégalo en tu IA favorita</small></button>
+            <button type="button" id="btnPasteJSON"><b>Pegar respuesta de la IA</b><small>JSON con tamaños y ★</small></button>
+          </div>
+        </div>
+        <button class="tb icon" id="btnClean" type="button" title="Quitar efectos (de lo elegido o de todo)" aria-label="Limpiar"><svg class="ic"><use href="#i-eraser"/></svg></button>
+      </div>
+      <div id="fontPop" class="pop wide" hidden></div>
+
+      <div id="aiBox" class="card" hidden>
+        <div class="cardHead"><b>Respuesta de la IA</b><button id="btnCloseAI" class="iconBtn" type="button" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button></div>
+        <textarea id="aiJSON" rows="5" placeholder='{"seqs":[{"n":1,"words":[{"w":"palabra","size":"M","brand":false}]}]}'></textarea>
+        <button id="btnApplyJSON" class="pill" type="button">Aplicar</button>
+      </div>
+
+      <div id="monitor" class="monitor">
+        <div class="monHead">
+          <button id="monPrev" class="iconBtn" type="button" title="Frase anterior (↑)" aria-label="Frase anterior"><svg class="ic"><use href="#i-back"/></svg></button>
+          <span id="monTitle" class="monTitle"></span>
+          <span id="monMeta" class="monMeta"></span>
+          <span class="grow"></span>
+          <button id="monNext" class="iconBtn" type="button" title="Frase siguiente (↓)" aria-label="Frase siguiente"><svg class="ic"><use href="#i-chev"/></svg></button>
+          <button id="monPlay" class="iconBtn play" type="button" title="Reproducir la entrada (Espacio)" aria-label="Reproducir"><svg class="ic"><use href="#i-play"/></svg></button>
+        </div>
+        <div class="monBody" id="monBody"><canvas id="monCanvas" aria-label="Vista previa de la frase"></canvas></div>
+      </div>
+
+      <div id="seqs" class="seqs one" aria-label="Palabras de la frase"></div>
+      <div id="insp" class="insp" aria-label="Ajustes de lo elegido"></div>
+    </div>
+
+    <!-- 4 · GENERAR -->
+    <div id="step-generar" class="stepView" hidden>
+      <div id="genView"></div>
+    </div>
   </section>
 
-  <div id="selBar" class="selBar" hidden></div>
 
   <!-- ============ BIBLIOTECA ============ -->
   <section id="tab-library" class="page" hidden>
@@ -212,20 +256,11 @@
     <div id="keysBody"></div>
   </section>
 
-  <!-- ============ PIE ============ -->
-  <footer class="foot">
-    <div class="row">
-      <button id="btnGenAll" class="pill big" type="button" disabled>Generar edición</button>
-      <button id="btnGenSel" class="pill ghost" type="button" disabled>Generar selección</button>
-    </div>
-    <div class="row sm">
-      <button id="btnSaveEdit" class="link" type="button">Guardar edición</button>
-      <label class="link">Importar edición<input id="editFile" type="file" accept=".escedit,.json" hidden></label>
-      <span class="grow"></span>
-      <button id="btnLog" class="link" type="button" aria-expanded="false">Registro</button>
-    </div>
-    <div id="msgApply" class="msg" role="status"></div>
-    <ol id="logBox" class="logBox" hidden></ol>
+  <!-- ============ PIE: navegacion entre pasos ============ -->
+  <footer class="foot" id="foot">
+    <button id="btnBack" class="pill ghost" type="button">Atrás</button>
+    <span id="stepInfo" class="stepInfo"></span>
+    <button id="btnNext" class="pill" type="button">Siguiente</button>
   </footer>
 </div>
 

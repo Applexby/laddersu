@@ -6,7 +6,7 @@
  * Carga del motor: se intenta aqui por rutas conocidas, pero la via fiable es que el panel
  * inyecte engine.js con evalScript si ES_status() dice que falta (ver js/main.js).
  */
-var ES_VERSION = '0.6.4';
+var ES_VERSION = '0.7.0';
 
 function ES_loadEngine() {
   if (typeof ES !== 'undefined' && ES.VERSION === ES_VERSION) { return true; }

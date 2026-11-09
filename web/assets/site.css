@@ -340,3 +340,19 @@ kbd { font: 600 13px var(--body); padding: 1px 7px; border-radius: 6px; backgrou
 .bGuide.in { opacity: 1; transform: none; }
 .bClick { position: absolute; width: 22px; height: 22px; margin: -9px 0 0 -9px; border-radius: 50%; border: 2px solid; animation: bClk .5s ease-out forwards; }
 @keyframes bClk { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+
+/* app de escritorio (v0.7): dos columnas */
+.appBody.two { display: grid; grid-template-columns: 44% 1fr; padding: 0; }
+.appSide { display: grid; gap: 8px; align-content: start; padding: 18px; background: #18181b; border-right: 1px solid rgba(255,255,255,.08); }
+.appSide .k { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: #8d8d97; font-weight: 700; }
+.appSide .ver { font: 750 28px var(--display); line-height: 1; }
+.appSide .st { color: #fbbf24; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.appSide .ab { text-align: center; font-size: 12px; padding: 9px 6px; white-space: nowrap; }
+.appSide .cr { margin-top: 10px; font-size: 12px; color: #8d8d97; }
+.appNotes { padding: 18px; font-size: 13px; color: #c9c9cf; }
+.appNotes > b { display: block; font: 700 16px var(--display); color: var(--ink); margin-bottom: 10px; }
+.appNotes p { margin: 8px 0 4px; }
+.appNotes em { font-style: normal; font-weight: 700; color: var(--ink); }
+.appNotes i { font-style: normal; font-size: 10px; font-weight: 700; color: #fbbf24; text-transform: uppercase; margin-left: 4px; }
+.appNotes ul { margin: 0; padding-left: 16px; display: grid; gap: 3px; }
+.appNotes li::marker { color: #a996ff; }

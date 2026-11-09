@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="/assets/site.css?v=5">
+<link rel="stylesheet" href="/assets/site.css?v=6">
 </head>
 <body>
 <header class="top" id="top">
@@ -33,11 +33,10 @@
   <nav class="toc" aria-label="Contenido de la guía" id="toc">
     <a href="#instalar">Instalar</a>
     <a href="#empezar">Primeros pasos</a>
-    <a href="#elegir">Elegir palabras</a>
-    <a href="#menu">Clic derecho</a>
-    <a href="#estilos">Estilos</a>
-    <a href="#previa">Vista previa</a>
-    <a href="#generar">Generar</a>
+    <a href="#texto">1 · Texto</a>
+    <a href="#frases">2 · Frases</a>
+    <a href="#diseno">3 · Diseño</a>
+    <a href="#generar">4 · Generar</a>
     <a href="#biblioteca">Biblioteca</a>
     <a href="#actualizar">Actualizar</a>
     <a href="#atajos">Atajos</a>
@@ -65,57 +64,52 @@
       <ol>
         <li>En Premiere, exporta los subtítulos <b>palabra por palabra</b> como <code>.srt</code>.</li>
         <li>En After Effects, abre la composición vertical (1080 × 1920) donde irán los subtítulos.</li>
-        <li>En Laddersu pulsa <b>Importar SRT</b> o arrastra el archivo al panel. Se agrupa en frases y se detectan tamaños y palabras clave.</li>
-        <li>Ajusta lo que quieras y pulsa <b>Generar edición</b>.</li>
+        <li>En Laddersu arrastra el archivo al panel o pulsa <b>Elegir archivo</b>.</li>
+        <li>Avanza por los cuatro pasos de arriba: <b>Texto › Frases › Diseño › Generar</b>. Con <b>Siguiente</b> y <b>Atrás</b> te mueves, o tocas el paso directamente.</li>
       </ol>
-      <p>Los tamaños se detectan con reglas locales, sin internet. Si prefieres que lo haga una IA, usa <b>Tamaños › Copiar prompt para IA</b> y luego <b>Pegar respuesta de la IA</b>.</p>
+      <p>Los cuatro pasos editan lo mismo: si vuelves a Texto y corriges una palabra, el cambio se ve en Frases y en Diseño. <b>Deshacer</b> funciona en todos.</p>
     </section>
 
-    <section id="elegir">
-      <h2>Elegir palabras</h2>
-      <table>
-        <tr><th>Acción</th><th>Resultado</th></tr>
-        <tr><td>Clic</td><td>Elige esa palabra (reemplaza la anterior).</td></tr>
-        <tr><td>Ctrl + clic</td><td>Suma o quita una palabra.</td></tr>
-        <tr><td>Mayús + clic</td><td>Elige un rango, también entre frases.</td></tr>
-        <tr><td>Arrastrar en el fondo</td><td>Recuadro de selección.</td></tr>
-        <tr><td>Número de la frase</td><td>Elige la frase entera.</td></tr>
-        <tr><td>Arrastrar una palabra</td><td>La mueve a otra frase, o al hueco entre frases para crear una nueva.</td></tr>
-      </table>
-      <p>La barra de abajo aparece al elegir palabras: tamaño S/M/L, palabra clave ★, caja, brillo y animación.</p>
-    </section>
-
-    <section id="menu">
-      <h2>Clic derecho</h2>
-      <p>El menú tiene arriba tres botones rápidos: <b>Destacar</b>, <b>Atenuar</b> y <b>Caja</b>. Debajo, los submenús se abren al lado del menú:</p>
+    <section id="texto">
+      <h2>1 · Texto</h2>
+      <p>La transcripción completa, en orden, sin estilos ni vista previa. Arriba ves el archivo, cuántas palabras tiene y cuánto dura.</p>
       <ul>
-        <li><b>Quitar</b>: solo lo que tienen las palabras elegidas (brillo, caja, color, animación…). Quitas una cosa y lo demás se queda.</li>
-        <li><b>Animación</b>: con vista previa animada al pasar el ratón.</li>
-        <li><b>Estilo</b>, <b>Color</b>, <b>Fuente</b>, <b>Sonido</b> y <b>Plantilla de texto</b>.</li>
-        <li><b>Cortar aquí</b>, <b>Unir</b>, <b>Salto de línea</b>, <b>Mover a</b> y <b>Estilo de la frase</b>.</li>
+        <li>Clic en una palabra: <b>Corregir</b>, <b>Unir con la siguiente</b>, <b>Separar</b> o <b>Quitar</b>.</li>
+        <li><b>Buscar y reemplazar</b> corrige un nombre en toda la edición de una vez.</li>
+        <li><b>Cambiar archivo</b> carga otro SRT; <b>Limpiar</b> empieza de cero.</li>
       </ul>
     </section>
 
-    <section id="estilos">
-      <h2>Estilos</h2>
-      <p>Se elige para toda la edición en <b>Ajustes › Estilo de la edición</b>, y frase por frase con <b>clic derecho › Estilo de la frase</b>.</p>
+    <section id="frases">
+      <h2>2 · Frases</h2>
+      <p>Primero eliges la base de la edición y cuántas palabras por frase: <b>corta</b>, <b>media</b> o <b>larga</b>. Laddersu agrupa todo el texto con ese estilo.</p>
       <h3>Escalera</h3>
       <p>Bloques con tamaños S, M y L, palabra clave en color y patrones variados (centro, escalera, zigzag, izquierda, derecha).</p>
+      <h3>Una línea</h3>
+      <p>Frases cortas de 1 a 3 palabras en una sola línea, sin dejar “de” o “el” sola al final.</p>
       <h3>Caja que recorre</h3>
       <p>La frase completa en orden y una caja que pasa de palabra en palabra según los tiempos del SRT.</p>
-      <h3>Una línea</h3>
-      <p>Frases cortas en una sola línea en el tercio inferior. Cada palabra entra con la animación de la edición.</p>
-      <p>Con <b>Una línea</b> el SRT se agrupa en frases de 1, 2 o 3 palabras (<b>Ajustes › Palabras por frase</b>), sin dejar una palabra como “de” o “el” sola al final. Al cambiar entre este estilo y la escalera o la caja, las frases se rearman solas; puedes deshacerlo.</p>
+      <p>Después ves la lista de frases. Toca el espacio entre dos palabras para <b>cortar</b> ahí. Marca varias frases para <b>unirlas</b> o pasarlas a otro estilo: solo ese tramo se vuelve a agrupar, así puedes mezclar estilos en la misma edición.</p>
     </section>
 
-    <section id="previa">
-      <h2>Vista previa</h2>
-      <p>Arriba del editor ves la frase activa tal como quedará, con la zona segura punteada. <b>Espacio</b> reproduce la entrada de las palabras; <b>‹ ›</b> cambian de frase y un clic sobre una palabra de la vista previa la elige.</p>
+    <section id="diseno">
+      <h2>3 · Diseño</h2>
+      <p>Aquí aparece la vista previa, frase por frase, con la zona segura punteada. <b>Espacio</b> reproduce la entrada de las palabras y <b>‹ ›</b> cambian de frase.</p>
+      <p>Elige una palabra (en la vista previa o en la frase) y ajústala abajo: tamaño S/M/L, palabra clave ★, caja, brillo, y las pestañas <b>Animación</b>, <b>Estilo</b>, <b>Color</b>, <b>Fuente</b>, <b>Sonido</b>, <b>Plantilla</b> y <b>Quitar</b>. Cada cambio se puede aplicar a la palabra, a <b>toda la frase</b> o a <b>todas las frases del mismo estilo</b>.</p>
+      <table>
+        <tr><th>Acción</th><th>Resultado</th></tr>
+        <tr><td>Clic</td><td>Elige esa palabra.</td></tr>
+        <tr><td>Ctrl + clic</td><td>Suma o quita una palabra.</td></tr>
+        <tr><td>Mayús + clic</td><td>Elige un rango.</td></tr>
+        <tr><td>Clic derecho</td><td>El menú completo de efectos.</td></tr>
+      </table>
+      <p>El aspecto general de cada estilo (colores, separación, contorno) está en <b>Ajustes › Aspecto de los estilos</b>.</p>
     </section>
 
     <section id="generar">
-      <h2>Generar</h2>
-      <p><b>Generar edición</b> crea todo en la composición activa; <b>Generar selección</b>, solo las frases elegidas. Se genera frase por frase y el botón pasa a <b>Detener</b> con su progreso.</p>
+      <h2>4 · Generar</h2>
+      <p>Antes de crear nada ves a qué composición va, cuántas frases y capas se crearán y los avisos que conviene revisar (sin composición abierta, fuentes que faltan…), cada uno con su arreglo.</p>
+      <p>Activa <b>Solo las frases que cambiaron</b> para regenerar únicamente lo que editaste desde la última vez. Se genera frase por frase con su progreso y puedes <b>Detener</b> en cualquier momento.</p>
       <p>Al volver a generar se reemplazan las capas que creó Laddersu antes (las reconoce por su comentario); tus propias capas no se tocan. Cada capa se llama como su palabra.</p>
     </section>
 
@@ -132,7 +126,7 @@
 
     <section id="actualizar">
       <h2>Actualizar</h2>
-      <p>Abre la app <b>Laddersu</b> de tu escritorio (o del menú Inicio). Te dice si tienes la última versión; si hay una nueva, pulsa <b>Actualizar</b>. Se descarga, se instala sola y luego reinicias After Effects.</p>
+      <p>Abre la app <b>Laddersu</b> de tu escritorio (o del menú Inicio). Muestra tu versión, las novedades de cada versión y, si hay una nueva, el botón <b>Actualizar</b>. Se descarga, se instala sola y luego reinicias After Effects. Desde la app también abres la web, la guía y los reportes.</p>
       <p>El panel también avisa cuando hay una versión nueva. También puedes descargar el instalador de nuevo: se instala encima, sin desinstalar.</p>
     </section>
 
@@ -155,9 +149,9 @@
       <h2>Si algo falla</h2>
       <ul>
         <li><b>No aparece en Ventana › Extensiones</b>: cierra After Effects por completo y vuelve a abrirlo. Si sigue sin aparecer, ejecuta el instalador otra vez.</li>
-        <li><b>Mensaje de error al generar</b>: el panel muestra el error de After Effects con su número de línea en <b>Registro</b>. Cópialo al reportarlo.</li>
+        <li><b>Mensaje de error al generar</b>: en el paso Generar verás el error y el botón <b>Copiar detalle para soporte</b>. Pégalo al reportarlo.</li>
         <li><b>Una fuente no se aplica</b>: comprueba que esté instalada en Windows; si no, After Effects usa la predeterminada y lo avisa.</li>
-        <li><b>La app no puede revisar</b>: comprueba tu conexión a internet y pulsa <b>Buscar de nuevo</b>.</li>
+        <li><b>La app no puede revisar</b>: comprueba tu conexión a internet y pulsa <b>Buscar actualizaciones</b>.</li>
       </ul>
       <p>¿Sigue sin funcionar o tienes una idea? Escríbenos en <a href="/consultas/">Consultas</a>.</p>
     </section>
@@ -171,7 +165,7 @@
     <span class="r"><a href="/guia/">Guía</a><a href="/novedades/">Novedades</a><a href="/consultas/">Consultas</a><a href="https://github.com/Applexby/laddersu">Código</a></span>
   </div>
 </footer>
-<script src="/assets/site.js?v=5"></script>
+<script src="/assets/site.js?v=6"></script>
 <script>
 (function () {
   var links = [].slice.call(document.querySelectorAll('#toc a'));

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Laddersu: panel principal. Las actualizaciones se hacen con la app de escritorio "Laddersu" (ver app/). -->
-<ExtensionManifest Version="7.0" ExtensionBundleId="com.idealo.laddersu" ExtensionBundleVersion="0.6.4" ExtensionBundleName="Laddersu"
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.idealo.laddersu" ExtensionBundleVersion="0.7.0" ExtensionBundleName="Laddersu"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ExtensionList>
-    <Extension Id="com.idealo.laddersu.panel" Version="0.6.4"/>
+    <Extension Id="com.idealo.laddersu.panel" Version="0.7.0"/>
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
