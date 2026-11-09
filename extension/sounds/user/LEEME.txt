@@ -1,0 +1,11 @@
+Pon aqui tus propios efectos de sonido (.wav o .mp3).
+
+Aparecen solos en la pestana Sonidos con el nombre del archivo y la categoria "Mis sonidos".
+Si quieres darles nombre o categoria, crea library.json en esta carpeta:
+
+[
+  { "id": "golpe-grave", "name": "Golpe grave", "cat": "Impacto", "file": "golpe_grave.wav" },
+  { "id": "risa", "name": "Risa corta", "cat": "Voces", "file": "risa.mp3" }
+]
+
+Las actualizaciones de Laddersu nunca tocan esta carpeta.

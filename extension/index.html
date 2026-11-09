@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laddersu</title>
+<link rel="stylesheet" href="css/panel.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-speaker" viewBox="0 0 16 16"><path d="M2 6v4h2.5L8 13V3L4.5 6H2z" fill="currentColor"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5M12.4 3.6a6.2 6.2 0 0 1 0 8.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-motion" viewBox="0 0 16 16"><path d="M6 8h8M11 5l3 3-3 3M1.5 5h3M1 8h3M1.5 11h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-box" viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="2.5" fill="currentColor" opacity=".22"/><rect x="1.5" y="4" width="13" height="8" rx="2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M5 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-under" viewBox="0 0 16 16"><path d="M4.5 2.5v4a3.5 3.5 0 0 0 7 0v-4M3 13.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 16 16"><path d="M8 2s4.5 4.6 4.5 7.6A4.5 4.5 0 0 1 3.5 9.6C3.5 6.6 8 2 8 2z" fill="currentColor"/></symbol>
+  <symbol id="i-type" viewBox="0 0 16 16"><path d="M3 4.5V3h10v1.5M8 3v10M6 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-size" viewBox="0 0 16 16"><path d="M1.5 12.5 5 3.5l3.5 9M2.8 9.5h4.4M10 12.5l2-5 2 5M10.7 11h2.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-star" viewBox="0 0 16 16"><path d="m8 1.8 1.9 4 4.3.5-3.2 3 .9 4.3L8 11.4 4.1 13.6 5 9.3l-3.2-3 4.3-.5z" fill="currentColor"/></symbol>
+  <symbol id="i-glow" viewBox="0 0 16 16"><path d="M7 1.5c.45 2.9 1.6 4.1 4.5 4.6-2.9.5-4.05 1.7-4.5 4.6-.45-2.9-1.6-4.1-4.5-4.6 2.9-.5 4.05-1.7 4.5-4.6z" fill="currentColor"/><path d="M12.5 9.5c.2 1.3.7 1.8 2 2-1.3.2-1.8.7-2 2-.2-1.3-.7-1.8-2-2 1.3-.2 1.8-.7 2-2z" fill="currentColor"/></symbol>
+  <symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.2v9.6L13 8z" fill="currentColor"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 16 16"><path d="M4.5 3h2.5v10H4.5zM9 3h2.5v10H9z" fill="currentColor"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 16 16"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-x" viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.8"/></symbol>
+  <symbol id="i-cut" viewBox="0 0 16 16"><circle cx="4.5" cy="11.5" r="2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="11.5" cy="11.5" r="2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M6 10 12.5 2M10 10 3.5 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-join" viewBox="0 0 16 16"><path d="M6.6 9.4l2.8-2.8M7.2 4.4l1.2-1.2a2.7 2.7 0 0 1 3.8 3.8L11 8.2M8.8 11.6l-1.2 1.2a2.7 2.7 0 0 1-3.8-3.8L5 7.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-import" viewBox="0 0 16 16"><path d="M8 2v8M4.8 7 8 10.2 11.2 7M2.5 13.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-export" viewBox="0 0 16 16"><path d="M8 10.5V2M4.8 5 8 1.8 11.2 5M2.5 13.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-wand" viewBox="0 0 16 16"><path d="m2.5 13.5 7.5-7.5M10.5 2.5v2M14 6h-2M12.8 3.7l-1.3 1.3M5 2.5v1.6M4.2 3.3h1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 16 16"><path d="M13 5.5A5.5 5.5 0 0 0 3.2 6M3 2.8V6h3.2M3 10.5A5.5 5.5 0 0 0 12.8 10M13 13.2V10H9.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 16 16"><path d="M6.8 1.5h2.4l.35 1.75c.48.18.92.44 1.31.76l1.69-.58 1.2 2.08-1.34 1.18a5 5 0 0 1 0 1.52l1.34 1.18-1.2 2.08-1.69-.58c-.39.32-.83.58-1.31.76L9.2 14.5H6.8l-.35-1.75a4.9 4.9 0 0 1-1.31-.76l-1.69.58-1.2-2.08 1.34-1.18a5 5 0 0 1 0-1.52L2.25 6.61l1.2-2.08 1.69.58c.39-.32.83-.58 1.31-.76z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.3"/><circle cx="8" cy="8" r="2.1" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.3"/></symbol>
+  <symbol id="i-eraser" viewBox="0 0 16 16"><path d="M9.5 2.5 14 7l-6 6H5L2 10l7.5-7.5zM6 6l5 5M8 13h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-back" viewBox="0 0 16 16"><path d="m10 3-5 5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 16 16"><path d="m3 13 .6-3L11 2.6 13.4 5 6 12.4 3 13z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M10.5 3.5v-.2a1.3 1.3 0 0 0-1.3-1.3H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3h.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 16 16"><path d="m8 2 6 3-6 3-6-3 6-3zM2 8l6 3 6-3M2 11l6 3 6-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-stair" viewBox="0 0 16 16"><path d="M2 3.5h6M5 8h6M8 12.5h6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="2"/></symbol>
+  <symbol id="i-align" viewBox="0 0 16 16"><path d="M2 3.5h6M5 8h6M8 12.5h6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="2"/></symbol>
+  <symbol id="i-return" viewBox="0 0 16 16"><path d="M13 3v5H4M7 5 4 8l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 3.5 2.5 6.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M2.8 6.5H10a3.5 3.5 0 0 1 0 7H7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 16 16"><path d="m10.5 3.5 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M13.2 6.5H6a3.5 3.5 0 0 0 0 7h2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-keys" viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="1.8" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.3"/><path d="M4 6.6h1M7 6.6h1M10 6.6h2M4.5 9.4h7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.3"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></symbol>
+  <symbol id="i-more" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.5" cy="8" r="1.4" fill="currentColor"/></symbol>
+  <symbol id="i-move" viewBox="0 0 16 16"><rect x="2" y="9.5" width="12" height="4.5" rx="1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M8 1.5V7M5.7 4.8 8 7.1l2.3-2.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-comp" viewBox="0 0 16 16"><rect x="1.5" y="3" width="13" height="10" rx="1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M1.5 6.2h13M5 3l-1 3.2M9 3 8 6.2M13 3l-1 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 16 16"><path d="M2 4.5h12M2 11.5h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="5.5" cy="4.5" r="1.8" fill="var(--menuBg,#2c2c30)" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10.5" cy="11.5" r="1.8" fill="var(--menuBg,#2c2c30)" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 16 16"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3l1.5 1.6h5.5c.7 0 1.2.5 1.2 1.2v6c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-insert" viewBox="0 0 16 16"><rect x="1.5" y="6" width="13" height="8" rx="1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M8 1.5v7.3M5.6 6.6 8 9l2.4-2.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-karaoke" viewBox="0 0 16 16"><rect x="5.5" y="5" width="6" height="6" rx="1.6" fill="currentColor" opacity=".35"/><path d="M1.5 8h2.5M6.5 8h4M12.5 8h2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.8"/></symbol>
+  <symbol id="i-remove" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-line" viewBox="0 0 16 16"><path d="M2 10.5h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M11 10.5h3" stroke="#ff0101" stroke-width="2" stroke-linecap="round"/><path d="M4 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".45"/></symbol>
+</svg>
+
+<div id="app">
+
+  <header class="top">
+    <h1 class="logo">Laddersu</h1>
+    <button id="compBadge" class="comp" type="button" title="Composición activa de After Effects">sin composición</button>
+    <button id="btnKeys" class="iconBtn" type="button" title="Atajos de teclado (?)" aria-label="Atajos de teclado"><svg class="ic"><use href="#i-keys"/></svg></button>
+    <button id="btnSettings" class="iconBtn" type="button" title="Ajustes" aria-label="Ajustes"><svg class="ic"><use href="#i-gear"/></svg></button>
+  </header>
+
+  <div id="updBar" class="updBar" role="status" hidden></div>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button class="tab on" role="tab" data-tab="editor" aria-selected="true">Editor</button>
+    <button class="tab" role="tab" data-tab="library" aria-selected="false">Biblioteca</button>
+  </nav>
+
+  <!-- ============ EDITOR ============ -->
+  <section id="tab-editor" class="page">
+    <div class="toolbar" id="toolbar">
+      <label class="tb primary" title="Importar el SRT palabra por palabra de Premiere">
+        <svg class="ic"><use href="#i-import"/></svg><span>Importar SRT</span>
+        <input id="srtFile" type="file" accept=".srt,.txt" hidden>
+      </label>
+      <span class="tgroup">
+        <button class="tb icon" id="btnCut" type="button" title="Cortar la frase antes de la palabra elegida" aria-label="Cortar"><svg class="ic"><use href="#i-cut"/></svg></button>
+        <button class="tb icon" id="btnJoin" type="button" title="Unir la frase con la siguiente" aria-label="Unir"><svg class="ic"><use href="#i-join"/></svg></button>
+        <button class="tb icon" id="btnClean" type="button" title="Quitar efectos (de lo elegido o de todo)" aria-label="Limpiar"><svg class="ic"><use href="#i-eraser"/></svg></button>
+      </span>
+      <div class="menuHost">
+        <button class="tb" id="btnSizes" type="button" aria-haspopup="true" aria-expanded="false" title="Detectar tamaños y palabras clave"><svg class="ic"><use href="#i-wand"/></svg><span>Tamaños</span></button>
+        <div id="sizesMenu" class="pop" hidden>
+          <button type="button" id="btnLocal"><b>Reglas locales</b><small>Sin IA ni internet</small></button>
+          <button type="button" id="btnCopyPrompt"><b>Copiar prompt para IA</b><small>Pégalo en tu IA favorita</small></button>
+          <button type="button" id="btnPasteJSON"><b>Pegar respuesta de la IA</b><small>JSON con tamaños y ★</small></button>
+        </div>
+      </div>
+      <span class="grow"></span>
+      <span class="tgroup">
+        <button class="tb icon" id="btnUndo" type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer"><svg class="ic"><use href="#i-undo"/></svg></button>
+        <button class="tb icon" id="btnRedo" type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer"><svg class="ic"><use href="#i-redo"/></svg></button>
+      </span>
+    </div>
+    <div class="fontRow">
+      <button class="fontBtn" id="btnFont" type="button" title="Fuente por defecto de toda la edición"><svg class="ic"><use href="#i-type"/></svg><span id="fontLabel">Fuente por defecto</span><svg class="ic chev"><use href="#i-chev"/></svg></button>
+    </div>
+    <div id="fontPop" class="pop wide" hidden></div>
+
+    <div id="aiBox" class="card" hidden>
+      <div class="cardHead"><b>Respuesta de la IA</b><button id="btnCloseAI" class="iconBtn" type="button" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button></div>
+      <textarea id="aiJSON" rows="5" placeholder='{"seqs":[{"n":1,"words":[{"w":"palabra","size":"M","brand":false}]}]}'></textarea>
+      <button id="btnApplyJSON" class="pill" type="button">Aplicar</button>
+    </div>
+
+    <div id="monitor" class="monitor" hidden>
+      <div class="monHead">
+        <button id="monToggle" class="monTitle" type="button" aria-expanded="true"><svg class="ic"><use href="#i-eye"/></svg><span id="monTitle">Vista previa</span></button>
+        <span id="monMeta" class="monMeta"></span>
+        <span class="grow"></span>
+        <button id="monPrev" class="iconBtn" type="button" title="Frase anterior" aria-label="Frase anterior"><svg class="ic"><use href="#i-back"/></svg></button>
+        <button id="monPlay" class="iconBtn play" type="button" title="Reproducir la entrada (Espacio)" aria-label="Reproducir"><svg class="ic"><use href="#i-play"/></svg></button>
+        <button id="monNext" class="iconBtn" type="button" title="Frase siguiente" aria-label="Frase siguiente"><svg class="ic"><use href="#i-chev"/></svg></button>
+      </div>
+      <div class="monBody" id="monBody"><canvas id="monCanvas" aria-label="Vista previa de la frase"></canvas></div>
+    </div>
+
+    <div id="empty" class="empty">
+      <div class="drop" id="dropZone">
+        <svg class="ic big"><use href="#i-import"/></svg>
+        <b>Importa el SRT de Premiere</b>
+        <span>Exporta los subtítulos palabra por palabra y suéltalos aquí, o usa <i>Importar SRT</i>.</span>
+      </div>
+      <details class="paste"><summary>Pegar el texto del SRT</summary>
+        <textarea id="srtPaste" rows="5" placeholder="1&#10;00:00:00,066 --> 00:00:00,333&#10;Como"></textarea>
+        <button id="btnParse" class="pill" type="button">Procesar</button>
+      </details>
+      <ol class="steps">
+        <li><b>Importa</b> el SRT: se agrupa en frases y se detectan tamaños y palabras clave.</li>
+        <li><b>Ajusta</b> lo que quieras: clic derecho sobre las palabras o la barra de abajo.</li>
+        <li><b>Genera</b> la edición en la composición activa.</li>
+      </ol>
+    </div>
+
+    <div id="seqs" class="seqs" aria-label="Frases"></div>
+  </section>
+
+  <div id="selBar" class="selBar" hidden></div>
+
+  <!-- ============ BIBLIOTECA ============ -->
+  <section id="tab-library" class="page" hidden>
+    <div class="subtabs" role="tablist">
+      <button class="stab on" data-lib="comp" type="button">Composiciones</button>
+      <button class="stab" data-lib="pres" type="button">Plantillas de texto</button>
+      <button class="stab" data-lib="snd" type="button">Sonidos</button>
+    </div>
+
+    <div id="lib-comp">
+      <div class="toolbar">
+        <button class="tb primary" id="btnSaveComp" type="button" title="Guarda una composición para usarla en otros proyectos"><svg class="ic"><use href="#i-plus"/></svg><span>Guardar composición</span></button>
+        <span class="grow"></span>
+        <button class="tb icon" id="btnLibFolder" type="button" title="Abrir la carpeta de la biblioteca" aria-label="Abrir carpeta"><svg class="ic"><use href="#i-folder"/></svg></button>
+        <button class="tb icon" id="btnLibRefresh" type="button" title="Actualizar la lista" aria-label="Actualizar"><svg class="ic"><use href="#i-refresh"/></svg></button>
+      </div>
+      <div id="compSave" class="card saveCard" hidden>
+        <div class="cardHead"><b>Guardar en la biblioteca</b><button id="compSaveX" class="iconBtn" type="button" aria-label="Cancelar"><svg class="ic"><use href="#i-x"/></svg></button></div>
+        <div class="choice" id="compMode"></div>
+        <label class="lab2" for="compName">Nombre</label>
+        <input id="compName" type="text" placeholder="Promo 2">
+        <p class="hint" id="compNote"></p>
+        <div class="row"><button id="compSaveOk" class="pill" type="button">Guardar</button><button id="compSaveNo" class="pill ghost" type="button">Cancelar</button></div>
+      </div>
+      <input id="libSearch" class="search" type="text" placeholder="Buscar en la biblioteca" aria-label="Buscar en la biblioteca">
+      <div id="compGrid" class="compGrid"></div>
+      <div id="msgLib" class="msg"></div>
+    </div>
+
+    <div id="lib-pres" hidden>
+      <div class="toolbar">
+        <button class="tb primary" id="btnSavePres" type="button" title="Guarda las capas seleccionadas como plantilla para palabras"><svg class="ic"><use href="#i-plus"/></svg><span>Nueva plantilla</span></button>
+        <label class="tb" title="Importar un archivo .escpres"><svg class="ic"><use href="#i-import"/></svg><span>Importar</span><input id="presFile" type="file" accept=".escpres,.json" hidden></label>
+        <span class="grow"></span>
+        <button class="tb ghost" id="btnPack" type="button" title="Vuelve a cargar las plantillas incluidas">Restaurar pack</button>
+      </div>
+      <p class="hint" id="presHint">Las plantillas reciben las palabras de tus subtítulos: selecciona capas de texto y formas en After Effects, pulsa <b>Nueva plantilla</b> y luego aplícala a palabras con clic derecho.</p>
+      <div id="presName" class="card" hidden>
+        <div class="cardHead"><b>Nombre de la plantilla</b></div>
+        <div class="row"><input id="presNameIn" type="text" placeholder="Promo 2"><button id="presNameOk" class="pill" type="button">Guardar</button><button id="presNameNo" class="pill ghost" type="button">Cancelar</button></div>
+      </div>
+      <div id="presList" class="presList"></div>
+      <div id="msgPres" class="msg"></div>
+    </div>
+
+    <div id="lib-snd" hidden>
+      <div id="sndCats" class="opts"></div>
+      <ul id="sndList" class="sndList"></ul>
+      <div class="row"><button id="btnAddSound" class="pill ghost" type="button">Importar mi sonido</button></div>
+      <div id="sndMsg" class="msg"></div>
+    </div>
+  </section>
+
+  <!-- ============ AJUSTES ============ -->
+  <section id="settings" class="drawer" hidden>
+    <div class="drawerHead"><b>Ajustes</b><button id="btnCloseSettings" class="iconBtn" type="button" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <div id="settingsBody"></div>
+  </section>
+
+  <!-- ============ ATAJOS ============ -->
+  <section id="keys" class="drawer" hidden>
+    <div class="drawerHead"><b>Atajos de teclado</b><button id="btnCloseKeys" class="iconBtn" type="button" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <div id="keysBody"></div>
+  </section>
+
+  <!-- ============ PIE ============ -->
+  <footer class="foot">
+    <div class="row">
+      <button id="btnGenAll" class="pill big" type="button" disabled>Generar edición</button>
+      <button id="btnGenSel" class="pill ghost" type="button" disabled>Generar selección</button>
+    </div>
+    <div class="row sm">
+      <button id="btnSaveEdit" class="link" type="button">Guardar edición</button>
+      <label class="link">Importar edición<input id="editFile" type="file" accept=".escedit,.json" hidden></label>
+      <span class="grow"></span>
+      <button id="btnLog" class="link" type="button" aria-expanded="false">Registro</button>
+    </div>
+    <div id="msgApply" class="msg" role="status"></div>
+    <ol id="logBox" class="logBox" hidden></ol>
+  </footer>
+</div>
+
+<div id="ctx" class="menu" role="menu" hidden></div>
+<div id="ctxFly" class="menu fly" role="menu" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="jsx/engine.js"></script>
+<script src="js/model.js"></script>
+<script src="js/presentations.js"></script>
+<script src="js/sfxlib.js"></script>
+<script src="js/usersounds.js"></script>
+<script src="js/updates.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

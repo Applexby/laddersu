@@ -20,7 +20,8 @@ bibliotecas de composiciones y plantillas, sonidos por palabra y actualizaciones
 
 ## Publicar una versión
 
-1. Sube la versión en `extension/version.json`, `extension/CSXS/manifest.xml` y `HOST_VER` en `extension/js/model.js`
+1. Sube la versión en `extension/version.json`, `extension/CSXS/manifest.xml` `HOST_VER` en `extension/js/model.js`,
+   `ES.VERSION` en `extension/jsx/engine.js` y `ES_VERSION` en `extension/jsx/host.jsx`
    (`node tools/check-version.js` comprueba que coincidan).
 2. Escribe sus novedades en `CHANGELOG.md` bajo `## [x.y.z]`.
 3. Crea la etiqueta y súbela: `git tag v0.6.1 && git push origin v0.6.1`.
@@ -34,3 +35,18 @@ el repositorio es público y el flujo usa el permiso propio de GitHub Actions.
 ```
 for f in tests/*.test.js; do node "$f"; done
 ```
+
+La prueba de interfaz (`python3 tests/ui_test.py`) abre el panel en Chromium con After Effects simulado.
+
+## Lo que solo se puede comprobar en After Effects
+
+Las pruebas usan un After Effects simulado (`tests/fakeae.js`). Esto queda para probar a mano:
+
+- **Estilo APPLEXBY:** que la fuente (por defecto `Archivo-Bold`) esté instalada y se aplique; que la línea quede
+  centrada a la altura elegida y que el corte en dos líneas se vea equilibrado con la fuente real.
+- **Entrada y salida por desenfoque:** curva de la animación y que el desenfoque llegue a 0.
+- **Ocultar durante T2:** la expresión de opacidad en las capas de subtítulos (fundido de 0,12 s).
+- **Sombra suave:** el efecto Sombra paralela con los valores del panel.
+- **Sonidos propios:** que los .wav/.mp3 de `sounds/user` se importen y se coloquen en su tiempo.
+- **Actualizador:** descarga, verificación SHA-256, descompresión con PowerShell y "Recargar paneles".
+- **Instalador:** que reemplace Escalera Subs y que el panel aparezca en Ventana › Extensiones.

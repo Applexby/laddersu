@@ -1,0 +1,16 @@
+var assert = require('assert'), fs = require('fs'), path = require('path'), os = require('os');
+var L = require('../extension/js/usersounds.js');
+var d = fs.mkdtempSync(path.join(os.tmpdir(), 'lu-snd-'));
+fs.writeFileSync(path.join(d, 'golpe_grave.wav'), 'x'); fs.writeFileSync(path.join(d, 'risa-corta.mp3'), 'x'); fs.writeFileSync(path.join(d, 'nota.txt'), 'x');
+assert.strictEqual(L.scan(d, { fs: fs, path: path }).length, 2);
+var two = L.scan(d, { fs: fs, path: path });
+assert(two.some(function (s) { return s.name === 'Golpe grave' && s.cat === 'Mis sonidos'; }));
+fs.writeFileSync(path.join(d, 'library.json'), JSON.stringify([{ id: 'golpe', name: 'Golpe fuerte', cat: 'Impacto', file: 'golpe_grave.wav' }, { id: 'falta', file: 'no_existe.wav' }]));
+var s = L.scan(d, { fs: fs, path: path });
+assert.strictEqual(s.length, 2);
+assert.strictEqual(s[0].id, 'u:golpe'); assert.strictEqual(s[0].cat, 'Impacto');
+assert(s.some(function (x) { return x.file === 'risa-corta.mp3'; }), 'los no listados tambien aparecen');
+fs.writeFileSync(path.join(d, 'library.json'), '{roto');
+assert.strictEqual(L.scan(d, { fs: fs, path: path }).length, 2, 'library.json roto no rompe nada');
+assert.deepStrictEqual(L.scan('/no/existe', { fs: fs, path: path }), []);
+console.log('5 pruebas de sonidos propios OK');
