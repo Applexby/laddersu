@@ -1,0 +1,50 @@
+name: Reportar un error
+description: Algo no funciona como debería en el panel o en la app de Laddersu.
+title: "[Error] "
+labels: ["error"]
+body:
+  - type: markdown
+    attributes:
+      value: Gracias por avisar. Con estos datos lo podemos reproducir y arreglar más rápido.
+  - type: textarea
+    id: que
+    attributes:
+      label: ¿Qué pasó?
+      description: Qué hiciste y qué ocurrió.
+      placeholder: Importé el SRT, elegí APPLEXBY y al generar…
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: ¿Qué esperabas que pasara?
+  - type: textarea
+    id: registro
+    attributes:
+      label: Registro del panel
+      description: Copia el texto de "Registro" (abajo a la derecha del panel), si hay algo.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Laddersu
+      description: Aparece en la app Laddersu y al final de Ajustes del panel.
+      placeholder: "0.6.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: ae
+    attributes:
+      label: After Effects
+      options:
+        - "2024"
+        - "2025"
+        - "2026"
+        - Otra
+    validations:
+      required: true
+  - type: textarea
+    id: capturas
+    attributes:
+      label: Capturas o archivos
+      description: Arrastra aquí capturas de pantalla o el .srt (si no es privado).

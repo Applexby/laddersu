@@ -1,5 +1,9 @@
 # Cambios
 
+## [0.6.2] - 2026-11-09
+- APPLEXBY sin contorno y solo con entrada: cada palabra aparece con desenfoque y transparencia y se queda hasta el corte, sin salida.
+- Nueva web: página de **Novedades**, página de **Consultas** para reportar errores o sugerir mejoras en GitHub, y demostración en un iPhone.
+
 ## [0.6.1] - 2026-11-09
 - **APPLEXBY con su look propio**: rojo, minúsculas, letras y palabras muy juntas, contorno blanco y sombra suave. Juntar letras, espacio entre palabras, contorno y colores se ajustan en Ajustes.
 - **Nuevo estilo Una línea** (el tradicional): frases cortas en una línea, en blanco, con la animación de la edición.

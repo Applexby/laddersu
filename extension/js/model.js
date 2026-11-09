@@ -27,14 +27,14 @@ var Model = (function () {
       // "Una linea" (tradicional): fuente de la edicion, blanco, espacios normales, entra con la animacion de la edicion
       linFont: '', linSize: 64, linColor: '#ffffff', linKey: '#ffd400', linCenterY: 70, linShadow: true, linExit: false, linUpper: false,
       // APPLEXBY: rojo, minusculas, letras y palabras muy juntas, contorno blanco y sombra suave; entra con desenfoque
-      apxFont: 'Archivo-Bold', apxSize: 64, apxColor: '#ff1a1a', apxKey: '#ff1a1a', apxCenterY: 70, apxShadow: true, apxExit: true,
-      apxLower: true, apxTrack: -60, apxGap: 14, apxStroke: true, apxStrokeColor: '#ffffff', apxStrokeW: 5, apxLook: 2,
+      apxFont: 'Archivo-Bold', apxSize: 64, apxColor: '#ff1a1a', apxKey: '#ff1a1a', apxCenterY: 70, apxShadow: true, apxExit: false,
+      apxLower: true, apxTrack: -60, apxGap: 14, apxStroke: false, apxStrokeColor: '#ffffff', apxStrokeW: 5, apxLook: 3,
       hideUnderT2: true
     };
   };
 
   // ---------- construccion ----------
-  M.HOST_VER = '0.6.1';
+  M.HOST_VER = '0.6.2';
   M.newId = function () { uid++; return uid; };
   // tras restaurar un estado guardado: evita ids repetidos
   M.reseed = function (st) {
@@ -508,7 +508,7 @@ var Model = (function () {
     function v(k) { return S[k] == null ? d[k] : S[k]; }
     if (style === 'applexby') {
       return { style: 'applexby', font: v('apxFont') || '', size: v('apxSize'), colorHex: v('apxColor'), keyHex: v('apxKey'),
-        centerY: v('apxCenterY') / 100, shadow: v('apxShadow') !== false, exit: v('apxExit') !== false,
+        centerY: v('apxCenterY') / 100, shadow: v('apxShadow') !== false, exit: v('apxExit') === true,
         caps: v('apxLower') ? 'lower' : 'none', track: v('apxTrack'), gap: v('apxGap') / 100,
         stroke: v('apxStroke') ? { colorHex: v('apxStrokeColor'), width: v('apxStrokeW') } : null,
         shadowLook: { opacity: 35, distance: 6, softness: 12 }, anim: 'blurIn' };
@@ -520,11 +520,12 @@ var Model = (function () {
   };
   // ajustes guardados de antes del nuevo aspecto APPLEXBY (0.6.0: blanco con clave roja) -> nuevo aspecto
   M.migrateCfg = function (S) {
-    if (S.apxLook !== 2) {
+    if (S.apxLook !== 2 && S.apxLook !== 3) {
       var d = M.defaults(), k;
       for (k in d) { if (d.hasOwnProperty(k) && /^apx/.test(k) && k !== 'apxFont' && k !== 'apxSize' && k !== 'apxCenterY') { S[k] = d[k]; } }
-      S.apxLook = 2;
     }
+    // 0.6.2: APPLEXBY sin contorno y solo con entrada (sin salida)
+    if (S.apxLook !== 3) { S.apxStroke = false; S.apxExit = false; S.apxLook = 3; }
     return S;
   };
 

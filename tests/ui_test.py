@@ -24,7 +24,7 @@ window.__adobe_cep__ = {
   getSystemPath: function(t){ return t==='extension' ? 'file:///C:/ext' : 'file:///C:/ud'; },
   evalScript: function(s, cb){
     var r = '', delay = 0;
-    if (s.indexOf('ES_status')>=0) r = '{"engine":true,"fonts":true,"ver":"0.6.1","ev":"0.6.1","ae":"24.0"}';
+    if (s.indexOf('ES_status')>=0) r = '{"engine":true,"fonts":true,"ver":"0.6.2","ev":"0.6.2","ae":"24.0"}';
     else if (s.indexOf('ES_compInfo')>=0) r = '{"ok":true,"name":"Reel","w":1080,"h":1920,"fps":30,"dur":60}';
     else if (s.indexOf('ES_listFonts')>=0) r = JSON.stringify({ok:true,fonts:[{n:'Arial-BoldMT',f:'Arial',s:'Bold'},{n:'Anton-Regular',f:'Anton',s:'Regular'},{n:'Montserrat-ExtraBold',f:'Montserrat',s:'ExtraBold'}]});
     else if (s.indexOf('ES_capture')>=0) r = JSON.stringify(window.__capture);
@@ -410,7 +410,7 @@ with sync_playwright() as p:
     n_line = page.evaluate('window.__ES.st.seqs.length')
     check(n_line > n_block and page.evaluate('Math.max.apply(null, window.__ES.st.seqs.map(function(q){return q.words.length;}))') <= 4, 'al pasar a APPLEXBY las frases se rearman cortas (%d -> %d)' % (n_block, n_line))
     check(page.locator('#toast button', has_text='Deshacer').count() == 1, 'rearmar frases se puede deshacer')
-    check(page.locator('#f_apxTrack').count() == 1 and page.locator('#f_apxGap').count() == 1 and page.locator('#f_apxStroke').count() == 1 and page.locator('#f_lineWords').count() == 1, 'APPLEXBY: juntar letras, espacio, contorno y palabras por frase')
+    check(page.locator('#f_apxTrack').count() == 1 and page.locator('#f_apxGap').count() == 1 and page.locator('#f_apxStroke').count() == 0 and page.locator('#f_lineWords').count() == 1, 'APPLEXBY: juntar letras, espacio y palabras por frase (sin contorno)')
     page.locator('#f_lineWords button[data-v="1"]').click(); page.wait_for_timeout(100)
     check(page.evaluate('window.__ES.S.lineWords') == 1 and page.evaluate('Math.max.apply(null, window.__ES.st.seqs.map(function(q){return q.words.length;}))') <= 3, '1 palabra por frase rearma')
     page.locator('#f_lineWords button[data-v="2"]').click(); page.wait_for_timeout(100)

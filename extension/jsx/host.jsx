@@ -6,7 +6,7 @@
  * Carga del motor: se intenta aqui por rutas conocidas, pero la via fiable es que el panel
  * inyecte engine.js con evalScript si ES_status() dice que falta (ver js/main.js).
  */
-var ES_VERSION = '0.6.1';
+var ES_VERSION = '0.6.2';
 
 function ES_loadEngine() {
   if (typeof ES !== 'undefined' && ES.VERSION === ES_VERSION) { return true; }
@@ -789,8 +789,8 @@ function ES_lineDefault() {
     caps: 'none', track: 0, gap: 0.28, stroke: null, shadowLook: { opacity: 60, distance: 4, softness: 16 }, anim: '' };
 }
 function ES_styleApx(ctx, seq) {
-  ES_styleLine(ctx, seq, ctx.cfg.apx || { style: 'applexby', font: '', size: 64, colorHex: '#ff1a1a', keyHex: '#ff1a1a', centerY: 0.7, shadow: true, exit: true,
-    caps: 'lower', track: -60, gap: 0.14, stroke: { colorHex: '#ffffff', width: 5 }, shadowLook: { opacity: 35, distance: 6, softness: 12 }, anim: 'blurIn' });
+  ES_styleLine(ctx, seq, ctx.cfg.apx || { style: 'applexby', font: '', size: 64, colorHex: '#ff1a1a', keyHex: '#ff1a1a', centerY: 0.7, shadow: true, exit: false,
+    caps: 'lower', track: -60, gap: 0.14, stroke: null, shadowLook: { opacity: 35, distance: 6, softness: 12 }, anim: 'blurIn' });
 }
 
 // subtitulos ocultos mientras hay un T2 en pantalla (expresion en Opacidad, editable a mano)

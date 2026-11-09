@@ -22,11 +22,12 @@
   <div class="wrap">
     <a class="logo" href="/"><span class="mark" aria-hidden="true"></span>Laddersu</a>
     <nav aria-label="Secciones">
-      <a href="#estilos">Estilos</a>
-      <a href="#funciones">Funciones</a>
-      <a href="#instalar">Instalar</a>
+      <a href="/#estilos">Estilos</a>
+      <a href="/#funciones">Funciones</a>
+      <a href="/#instalar">Instalar</a>
       <a href="/guia/">Guía</a>
-      <a href="#novedades">Novedades</a>
+      <a href="/novedades/">Novedades</a>
+      <a href="/consultas/">Consultas</a>
     </nav>
     <a class="pill" href="https://github.com/Applexby/laddersu/releases/latest/download/Laddersu-Setup.exe" data-dl>Descargar</a>
   </div>
@@ -35,7 +36,9 @@
 <main>
   <div class="wrap hero">
     <div>
-      <h1>Subtítulos animados para tus reels.</h1>
+      <h1 class="ttl" aria-label="Subtítulos animados para tus reels.">
+        <span class="tw" aria-hidden="true">Subtítulos</span> <span class="tw" aria-hidden="true">animados</span> <span class="tw" aria-hidden="true">para</span> <span class="tw" aria-hidden="true">tus</span> <span class="tw hl" aria-hidden="true"><i class="hlBox"></i><span>reels.</span></span>
+      </h1>
       <p class="lede">Del SRT de Premiere a After Effects, en un clic.</p>
       <div class="cta">
         <a class="btn main" href="https://github.com/Applexby/laddersu/releases/latest/download/Laddersu-Setup.exe" data-dl>
@@ -45,18 +48,19 @@
         <a class="btn line" href="/guia/">Ver la guía</a>
       </div>
       <p class="soonNote" id="soonNote" hidden>Estamos preparando la primera versión publicada. Vuelve en unos días o sigue el proyecto en <a href="https://github.com/Applexby/laddersu">GitHub</a>.</p>
-      <p class="meta"><b id="verLine">Última versión</b> · After Effects 2024–2026 · Windows</p>
     </div>
 
     <div class="phone" aria-label="Demostración: una frase armada por Laddersu">
+      <i class="btnL a" aria-hidden="true"></i><i class="btnL b" aria-hidden="true"></i><i class="btnL c" aria-hidden="true"></i><i class="btnR" aria-hidden="true"></i>
       <div class="screen" id="demo">
+        <div class="status" aria-hidden="true"><span>9:41</span><i class="island"></i><span class="sig"><b></b><b></b><b></b><b></b><em></em></span></div>
+        <i class="homeBar" aria-hidden="true"></i>
         <div class="zone"><span>zona segura</span></div>
         <div class="lock" id="demoLock"></div>
         <div class="tag" role="group" aria-label="Estilo de la demostración">
           <button type="button" data-style="lock" aria-pressed="true">Escalera</button>
           <button type="button" data-style="kara" aria-pressed="false">Caja</button>
-          <button type="button" data-style="line" aria-pressed="false">Línea</button>
-          <button type="button" data-style="apx" aria-pressed="false">APPLEXBY</button>
+          <button type="button" data-style="line" aria-pressed="false">Una línea</button>
         </div>
       </div>
     </div>
@@ -65,7 +69,7 @@
   <section class="block" id="estilos">
     <div class="wrap">
       <div class="head">
-        <h2>Cuatro estilos, en el mismo panel.</h2>
+        <h2>Tres estilos, en el mismo panel.</h2>
         <p>Elige un estilo para toda la edición y cámbialo en las frases que quieras. La vista previa del panel te muestra el resultado antes de crear nada en After Effects.</p>
       </div>
       <div class="styles">
@@ -80,14 +84,9 @@
           <p>La frase entera en orden y una caja que se desliza de palabra en palabra al ritmo de la voz.</p>
         </article>
         <article class="style">
-          <div class="mini"><div class="apx line" data-mini="line"></div></div>
+          <div class="mini"><div class="one" data-mini="line"></div></div>
           <h3>Una línea</h3>
           <p>Frases cortas de una o dos palabras en el tercio inferior, con la animación que elijas.</p>
-        </article>
-        <article class="style">
-          <div class="mini"><div class="apx red" data-mini="apx"></div></div>
-          <h3>APPLEXBY</h3>
-          <p>Frases cortas en rojo, letras juntas y contorno blanco, que entran con desenfoque.</p>
         </article>
       </div>
     </div>
@@ -129,26 +128,13 @@
     </div>
   </section>
 
-  <section class="block" id="novedades">
-    <div class="wrap">
-      <div class="head">
-        <h2>Novedades</h2>
-        <p>Para instalar la última versión, abre la app <b>Laddersu</b> de tu escritorio y pulsa <b>Actualizar</b>.</p>
-      </div>
-      <div class="rel" id="releases">
-        <article class="relItem"><header><b>0.6.0</b><span>Laddersu</span></header>
-          <ul><li>Escalera Subs ahora se llama Laddersu.</li><li>Panel de actualizaciones con instalación en un clic.</li><li>Nuevo estilo de una línea, entrada por desenfoque e importación de paquetes de reel.</li></ul>
-        </article>
-      </div>
-    </div>
-  </section>
 </main>
 
 <footer class="foot">
   <div class="wrap">
     <span class="logo"><span class="mark" aria-hidden="true"></span>Laddersu</span>
     <span>Hecho por Applexby</span>
-    <span class="r"><a href="/guia/">Guía</a><a href="https://github.com/Applexby/laddersu/releases">Versiones</a><a href="https://github.com/Applexby/laddersu">Código</a></span>
+    <span class="r"><a href="/guia/">Guía</a><a href="/novedades/">Novedades</a><a href="/consultas/">Consultas</a><a href="https://github.com/Applexby/laddersu">Código</a></span>
   </div>
 </footer>
 

@@ -1,0 +1,22 @@
+name: Sugerir una mejora
+description: Una idea para que Laddersu te ahorre más tiempo.
+title: "[Mejora] "
+labels: ["mejora"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: ¿Qué te gustaría?
+      placeholder: Que el estilo Una línea tenga…
+    validations:
+      required: true
+  - type: textarea
+    id: para
+    attributes:
+      label: ¿Para qué te serviría?
+      description: En qué parte de tu edición lo usarías.
+  - type: textarea
+    id: refs
+    attributes:
+      label: Referencias
+      description: Capturas, videos o enlaces de ejemplo.

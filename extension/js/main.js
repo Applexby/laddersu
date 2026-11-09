@@ -203,7 +203,7 @@
     row = h('div', 'styleChoice');
     [['lockup', 'Escalera', 'Bloque con tamaños, ★ y patrones'], ['karaoke', 'Caja que recorre', 'Frase entera y una caja que pasa de palabra en palabra'],
      ['line', 'Una línea', 'Frases cortas en una línea, con la animación de la edición'],
-     ['applexby', 'APPLEXBY', 'Frases cortas, letras juntas en rojo con contorno, entran con desenfoque']].forEach(function (o) {
+     ['applexby', 'APPLEXBY', 'Frases cortas en rojo, letras juntas, entran con desenfoque']].forEach(function (o) {
       var b = h('button', 'styleBtn' + (S.editStyle === o[0] ? ' on' : '')); b.type = 'button'; b.setAttribute('aria-pressed', S.editStyle === o[0] ? 'true' : 'false');
       b.appendChild(styleArt(o[0])); b.appendChild(h('b', '', o[1])); b.appendChild(h('small', '', o[2]));
       b.addEventListener('click', function () { setEditStyle(o[0]); });
@@ -225,17 +225,12 @@
       c.appendChild(row);
       if (ax) {
         c.appendChild(fld('Minúsculas', toggle('apxLower')));
-        c.appendChild(fld('Contorno', toggle('apxStroke', null, function (v) { S.apxStroke = v; setTimeout(renderSettings, 0); })));
-        if (S.apxStroke) {
-          c.appendChild(fld('Color del contorno', colorIn('apxStrokeColor')));
-          c.appendChild(fld('Grosor del contorno', slider('apxStrokeW', 1, 16, 0.5, ' px')));
-        }
       } else {
         c.appendChild(fld('Mayúsculas', toggle('linUpper')));
       }
       c.appendChild(fld('Sombra suave', toggle(P + 'Shadow')));
-      c.appendChild(fld(ax ? 'Salida con desenfoque al terminar la frase' : 'Salida al terminar la frase', toggle(P + 'Exit')));
-      c.appendChild(h('p', 'secNote', ax ? 'Cada palabra entra con desenfoque (0,30 s). Si una frase no cabe en una línea se parte en dos, nunca en tres.'
+      c.appendChild(fld('Salida al terminar la frase', toggle(P + 'Exit'), 'Apagada: las palabras solo tienen entrada y desaparecen al cortar.'));
+      c.appendChild(h('p', 'secNote', ax ? 'Cada palabra entra con desenfoque y transparencia (0,30 s), sin salida. Si una frase no cabe en una línea se parte en dos, nunca en tres.'
         : 'Cada palabra entra con la animación de la edición (Ajustes ▸ Animación). Si no cabe en una línea se parte en dos, nunca en tres.'));
     } else if (S.editStyle === 'karaoke') {
       c.appendChild(fld('Tamaño de las palabras', segc('karSize', [['S', 'S'], ['M', 'M'], ['L', 'L']])));

@@ -1,4 +1,4 @@
-/* Laddersu - demo del telefono, version publicada y novedades desde GitHub */
+/* Laddersu - titulo animado, demo del telefono, botones de descarga y novedades desde GitHub */
 (function () {
   'use strict';
   var REPO = 'Applexby/laddersu';
@@ -7,6 +7,18 @@
   // barra superior con borde al hacer scroll
   var top = document.getElementById('top');
   if (top) { var onS = function () { top.classList.toggle('scrolled', window.scrollY > 8); }; window.addEventListener('scroll', onS, { passive: true }); onS(); }
+
+  // ---------- titulo: entra palabra por palabra, como un subtitulo, y la caja pasa a "reels." ----------
+  var ttl = document.querySelector('.ttl');
+  if (ttl) {
+    if (reduce) { ttl.classList.add('done'); }
+    else {
+      var tws = ttl.querySelectorAll('.tw');
+      [].forEach.call(tws, function (w, k) { w.style.animationDelay = (120 + k * 140) + 'ms'; });
+      ttl.classList.add('play');
+      setTimeout(function () { ttl.classList.add('done'); }, 120 + tws.length * 140 + 380);
+    }
+  }
 
   // ---------- frases de ejemplo (como las arma el plugin) ----------
   // cada linea: [alineacion, [[texto, tamano, clave]]]
@@ -19,9 +31,8 @@
     [['El', 0], ['tiempo', 0], ['que', 0], ['mides', 0], ['no', 0], ['es', 0], ['el', 0], ['que', 0], ['vives', 1]],
     [['Frieren', 1], ['camina', 0], ['sola', 0], ['hacia', 0], ['el', 0], ['norte', 0]]
   ];
-
-  // frases cortas de los estilos de una linea (1 o 2 palabras; la palabra funcion va con la siguiente)
-  var SHORT = [['o', 'simplemente'], ['nunca', 'frenes,'], ['sigue', 'caminando'], ['hacia', 'el', 'norte']];
+  // Una linea: frases cortas (1 o 2 palabras; la palabra funcion va con la siguiente), siempre en una sola linea
+  var SHORT = [['El', 'tiempo'], ['que', 'mides'], ['no', 'es'], ['el', 'que', 'vives']];
 
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (txt != null) { e.textContent = txt; } return e; }
   var timers = [];
@@ -57,7 +68,6 @@
     if (loop) { later(function () { playKara(box, i + 1, true); }, spans.length * 380 + 1600); }
   }
 
-  // Una linea y APPLEXBY: frase corta, palabra por palabra; luego la siguiente
   function playShort(box, i, loop) {
     box.innerHTML = '';
     var line = SHORT[i % SHORT.length], spans = [];
@@ -65,24 +75,22 @@
     if (reduce) { spans.forEach(function (s) { s.classList.add('on'); }); return; }
     spans.forEach(function (s, k) { later(function () { s.classList.add('on'); }, 150 + k * 260); });
     if (loop) {
-      later(function () { spans.forEach(function (s) { s.classList.remove('on'); }); }, 150 + spans.length * 260 + 900);
-      later(function () { playShort(box, i + 1, true); }, 150 + spans.length * 260 + 1250);
+      later(function () { spans.forEach(function (s) { s.classList.add('off'); }); }, 150 + spans.length * 260 + 900);
+      later(function () { playShort(box, i + 1, true); }, 150 + spans.length * 260 + 1150);
     }
   }
 
   // telefono principal
   var demo = document.getElementById('demo');
   if (demo) {
-    var lock = document.getElementById('demoLock'), current = 'lock';
-    var kara = el('div', 'kara'), apx = el('div', 'apx red'), line = el('div', 'apx line');
+    var lock = document.getElementById('demoLock');
+    var kara = el('div', 'kara'), line = el('div', 'one');
     var show = function (style) {
-      clear(); current = style;
-      lock.hidden = style !== 'lock'; kara.remove(); apx.remove(); line.remove();
-      demo.querySelector('.zone').hidden = style !== 'lock';
+      clear();
+      lock.hidden = style !== 'lock'; kara.remove(); line.remove();
       if (style === 'lock') { playLock(lock, 0, true); }
       if (style === 'kara') { demo.appendChild(kara); playKara(kara, 0, true); }
       if (style === 'line') { demo.appendChild(line); playShort(line, 0, true); }
-      if (style === 'apx') { demo.appendChild(apx); playShort(apx, 0, true); }
       demo.querySelectorAll('.tag button').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-style') === style ? 'true' : 'false'); });
       startMinis();
     };
@@ -92,19 +100,17 @@
 
   // miniaturas de la seccion de estilos (se repiten solas)
   function startMinis() {
-    document.querySelectorAll('[data-mini]').forEach(function (m, idx) {
+    document.querySelectorAll('[data-mini]').forEach(function (m) {
       var kind = m.getAttribute('data-mini');
       if (kind === 'lock') { playLock(m, 1, true); }
       if (kind === 'kara') { playKara(m, 1, true); }
       if (kind === 'line') { playShort(m, 2, true); }
-      if (kind === 'apx') { playShort(m, 0, true); }
     });
   }
   if (!demo) { startMinis(); }
 
   // ---------- botones de descarga ----------
-  // Si todavia no hay ninguna version publicada, los botones no llevan a un 404 de GitHub:
-  // pasan a "Disponible muy pronto" y explican el estado.
+  // Si todavia no hay ninguna version publicada, los botones no llevan a un 404 de GitHub.
   function noRelease() {
     document.querySelectorAll('[data-dl]').forEach(function (a) {
       a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); a.classList.add('soon');
@@ -112,38 +118,36 @@
         var svg = a.querySelector('svg'); a.textContent = a.classList.contains('pill') ? 'Muy pronto' : 'Disponible muy pronto'; if (svg && a.classList.contains('btn')) { a.insertBefore(svg, a.firstChild); }
       }
     });
-    var vl = document.getElementById('verLine');
-    if (vl) { vl.textContent = 'Primera versión en preparación'; }
     var note = document.getElementById('soonNote');
     if (note) { note.hidden = false; }
   }
-  fetch('https://api.github.com/repos/' + REPO + '/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
-    .then(function (r) { if (r.status === 404) { noRelease(); } })
-    .catch(function () {});
 
-  // ---------- version publicada y novedades ----------
+  // ---------- novedades (pagina /novedades/) ----------
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function notesToList(md) {
-    return String(md || '').split(/\r?\n/).map(function (l) { return l.trim(); })
-      .filter(function (l) { return /^[-*]\s+/.test(l); }).slice(0, 8)
-      .map(function (l) { return '<li>' + esc(l.replace(/^[-*]\s+/, '').replace(/\*\*/g, '').replace(/`/g, '')) + '</li>'; }).join('');
+  function inline(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>'); }
+  // el estilo APPLEXBY es de uso interno: no se anuncia en la web
+  function publicLine(l) {
+    l = l.replace(/Una l\u00ednea y APPLEXBY/g, 'Una l\u00ednea').replace(/\s*\(Idealo, APPLEXBY[^)]*\)/g, '');
+    return /APPLEXBY/i.test(l) ? '' : l;
   }
-  fetch('https://api.github.com/repos/' + REPO + '/releases?per_page=5', { headers: { Accept: 'application/vnd.github+json' } })
+  function notesToList(md) {
+    return String(md || '').split(/\r?\n/).map(function (l) { return publicLine(l.trim()); })
+      .filter(function (l) { return /^[-*]\s+/.test(l); })
+      .map(function (l) { return '<li>' + inline(l.replace(/^[-*]\s+/, '')) + '</li>'; }).join('');
+  }
+  function fmtDate(d) { return new Date(d).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' }); }
+  var box = document.getElementById('releases');
+  fetch('https://api.github.com/repos/' + REPO + '/releases?per_page=20', { headers: { Accept: 'application/vnd.github+json' } })
     .then(function (r) { return r.ok ? r.json() : []; })
     .then(function (list) {
       list = (list || []).filter(function (r) { return !r.draft && !r.prerelease; });
-      if (!list.length) { return; }
-      var v = String(list[0].tag_name).replace(/^v/, ''), d = new Date(list[0].published_at);
-      var vl = document.getElementById('verLine');
-      if (vl) { vl.textContent = 'Versión ' + v + ' · ' + d.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' }); }
-      var box = document.getElementById('releases');
+      if (!list.length) { noRelease(); if (box) { box.innerHTML = '<p class="soft">Todavía no hay versiones publicadas.</p>'; } return; }
       if (!box) { return; }
-      box.innerHTML = list.map(function (r) {
-        var items = notesToList(r.body);
-        return '<article class="relItem"><header><b>' + esc(String(r.tag_name).replace(/^v/, '')) + '</b><span>' +
-          esc(new Date(r.published_at).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })) + '</span></header>' +
+      box.innerHTML = list.map(function (r, i) {
+        var items = notesToList(r.body), v = esc(String(r.tag_name).replace(/^v/, ''));
+        return '<article class="relItem' + (i === 0 ? ' latest' : '') + '"><header><b>' + v + '</b>' + (i === 0 ? '<em>Última</em>' : '') + '<span>' + esc(fmtDate(r.published_at)) + '</span></header>' +
           (items ? '<ul>' + items + '</ul>' : '<p class="soft">Mejoras y correcciones.</p>') + '</article>';
       }).join('');
     })
-    .catch(function () {});
+    .catch(function () { if (box) { box.innerHTML = '<p class="soft">No se pudieron cargar las versiones. <a href="https://github.com/' + REPO + '/releases">Míralas en GitHub</a>.</p>'; } });
 })();
