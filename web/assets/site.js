@@ -33,35 +33,24 @@
 
   // ---------- el panel por dentro: capturas reales con puntos que explican cada parte ----------
   var TOUR = {
-    editor: { alt: 'Editor: vista previa arriba y las frases del SRT debajo', pins: [[5, 38, 'Vista previa en vivo'], [5, 66, 'Tus frases'], [5, 90, 'Generar en After Effects']] },
-    menu: { alt: 'Menú de clic derecho con el submenú de animaciones abierto', pins: [[5, 39, 'Botones rápidos'], [5, 52, 'Submenús al lado']] },
-    ajustes: { alt: 'Ajustes: estilo de la edición y tamaños', pins: [[5, 21, 'Estilo de toda la edición'], [5, 66, 'Tamaños S, M y L']] },
-    biblioteca: { alt: 'Biblioteca de composiciones ordenada en grupos', pins: [[5, 27, 'Grupos'], [5, 64, 'Insertar con un clic']] },
-    sonidos: { alt: 'Biblioteca de sonidos por categoría', pins: [[5, 17, 'Categorías'], [5, 29, 'Escucha y usa']] }
+    editor: 'Vista previa y frases del SRT', menu: 'Menú de clic derecho con el submenú de animaciones',
+    ajustes: 'Estilo de la edición', biblioteca: 'Biblioteca de composiciones con grupos', sonidos: 'Biblioteca de sonidos por categoría'
   };
   var tabs = [].slice.call(document.querySelectorAll('.tourList [data-shot]'));
-  var timg = document.getElementById('tourImg'), tpins = document.getElementById('tourPins'), tcap = document.getElementById('tourCap');
+  var timg = document.getElementById('tourImg'), tcap = document.getElementById('tourCap');
   if (tabs.length && timg) {
     var ti = 0, t0 = performance.now(), paused = false, DUR = 6500;
     // precarga
-    tabs.forEach(function (b) { var im = new Image(); im.src = '/assets/ui/' + b.getAttribute('data-shot') + '.webp?v=3'; });
+    tabs.forEach(function (b) { var im = new Image(); im.src = '/assets/ui/' + b.getAttribute('data-shot') + '-c.webp?v=4'; });
     var pick = function (i, user) {
       ti = (i + tabs.length) % tabs.length; t0 = performance.now();
-      var b = tabs[ti], k = b.getAttribute('data-shot'), d = TOUR[k];
+      var b = tabs[ti], k = b.getAttribute('data-shot');
       tabs.forEach(function (x, j) { x.setAttribute('aria-selected', j === ti ? 'true' : 'false'); x.style.setProperty('--p', 0); });
       timg.classList.add('swap');
       setTimeout(function () {
-        timg.src = '/assets/ui/' + k + '.webp?v=3'; timg.alt = d.alt;
+        timg.src = '/assets/ui/' + k + '-c.webp?v=4'; timg.alt = 'Panel de Laddersu: ' + TOUR[k];
         timg.classList.remove('swap');
-        tpins.innerHTML = '';
-        d.pins.forEach(function (p, n) {
-          var e = document.createElement('div'); e.className = 'pin' + (p[0] > 50 ? ' r' : '');
-          e.style.top = p[1] + '%'; if (p[0] > 50) { e.style.right = (100 - p[0] - 4) + '%'; } else { e.style.left = p[0] + '%'; }
-          e.style.animationDelay = (150 + n * 160) + 'ms';
-          e.innerHTML = '<i>' + (n + 1) + '</i><span></span>'; e.querySelector('span').textContent = p[2];
-          tpins.appendChild(e);
-        });
-      }, user ? 120 : 200);
+      }, user ? 140 : 220);
       if (tcap) { tcap.textContent = b.querySelector('span').textContent; }
       if (user && window.matchMedia('(max-width: 900px)').matches) { b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); }
     };
@@ -205,9 +194,11 @@
   function fmtDate(d) { return new Date(d).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' }); }
   var box = document.getElementById('releases');
   fetch('https://api.github.com/repos/' + REPO + '/releases?per_page=20', { headers: { Accept: 'application/vnd.github+json' } })
-    .then(function (r) { return r.ok ? r.json() : []; })
+    .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (list) {
-      list = (list || []).filter(function (r) { return !r.draft && !r.prerelease; });
+      // sin respuesta (por ejemplo, GitHub limito las consultas): los botones de descarga se quedan como estan
+      if (!list) { if (box) { box.innerHTML = '<p class="soft">No se pudieron cargar las versiones. <a href="https://github.com/' + REPO + '/releases">M\u00edralas en GitHub</a>.</p>'; } return; }
+      list = list.filter(function (r) { return !r.draft && !r.prerelease; });
       if (!list.length) { noRelease(); if (box) { box.innerHTML = '<p class="soft">Todavía no hay versiones publicadas.</p>'; } return; }
       if (!box) { return; }
       box.innerHTML = list.map(function (r, i) {

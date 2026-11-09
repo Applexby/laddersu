@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -49,10 +50,10 @@ namespace Laddersu
             AutoScaleDimensions = new SizeF(96F, 96F);
             Text = "Laddersu";
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
-            FormBorderStyle = FormBorderStyle.FixedSingle; MaximizeBox = false;
+            FormBorderStyle = FormBorderStyle.None; MaximizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(420, 360);
+            ClientSize = new Size(420, 360 + TitleBar.H);
             BackColor = Bg; ForeColor = Text1;
             Font = new Font("Segoe UI", 9.75f);
 
@@ -94,9 +95,36 @@ namespace Laddersu
             Controls.Add(web);
             AcceptButton = main;
 
+            // barra de titulo propia (botones rojo, amarillo y verde a la izquierda, como en macOS)
+            foreach (Control c in Controls) { c.Top += TitleBar.H; }
+            var tb = new TitleBar(this); tb.Dock = DockStyle.Top;
+            Controls.Add(tb);
             ResumeLayout(false);
             PerformLayout();
             Shown += async (s, e) => await Check();
+        }
+
+        // ventana sin el marco de Windows: sombra, esquinas redondeadas en Windows 11 y borde fino
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                var cp = base.CreateParams;
+                cp.ClassStyle |= 0x20000;             // CS_DROPSHADOW
+                cp.Style |= 0x20000 | 0x80000;        // WS_MINIMIZEBOX | WS_SYSMENU: minimizar desde la barra de tareas
+                return cp;
+            }
+        }
+        [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr h, int attr, ref int val, int size);
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            try { int round = 2; DwmSetWindowAttribute(Handle, 33, ref round, 4); } catch { }
+        }
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            using (var p = new Pen(Line)) { e.Graphics.DrawRectangle(p, 0, 0, ClientSize.Width - 1, ClientSize.Height - 1); }
         }
 
         static void Style(Button b, bool primary)
@@ -172,6 +200,73 @@ namespace Laddersu
         {
             string m = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
             return m.Length > 90 ? m.Substring(0, 90) + "…" : m;
+        }
+    }
+
+    // Barra de titulo: cerrar (rojo), minimizar (amarillo) y verde decorativo; se arrastra para mover la ventana.
+    class TitleBar : Control
+    {
+        public const int H = 38;
+        static readonly Color[] Dots = { Color.FromArgb(255, 95, 87), Color.FromArgb(254, 188, 46), Color.FromArgb(40, 200, 64) };
+        readonly Form form;
+        bool hover;
+        [DllImport("user32.dll")] static extern bool ReleaseCapture();
+        [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr h, int msg, IntPtr w, IntPtr l);
+
+        public TitleBar(Form f)
+        {
+            form = f; Height = H;
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
+            BackColor = Color.FromArgb(27, 27, 30);
+        }
+        Rectangle Dot(int i) { int d = 12; return new Rectangle(14 + i * 20, (H - d) / 2, d, d); }
+        int Hit(Point p) { for (int i = 0; i < 3; i++) { var r = Dot(i); r.Inflate(3, 3); if (r.Contains(p)) { return i; } } return -1; }
+        bool InGroup(Point p) { return p.X >= 8 && p.X <= 14 + 2 * 20 + 18 && p.Y >= 6 && p.Y <= H - 6; }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics; g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using (var t = new SolidBrush(Color.FromArgb(150, 150, 160)))
+            using (var f = new Font("Segoe UI Semibold", 9f))
+            {
+                var sz = g.MeasureString("Laddersu", f);
+                g.DrawString("Laddersu", f, t, (Width - sz.Width) / 2, (H - sz.Height) / 2);
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                var r = Dot(i);
+                using (var b = new SolidBrush(Dots[i])) { g.FillEllipse(b, r); }
+                using (var pe = new Pen(Color.FromArgb(40, 0, 0, 0))) { g.DrawEllipse(pe, r); }
+                if (hover)
+                {
+                    using (var pen = new Pen(Color.FromArgb(150, 40, 20, 10), 1.4f))
+                    {
+                        float cx = r.X + r.Width / 2f, cy = r.Y + r.Height / 2f, k = 2.6f;
+                        if (i == 0) { g.DrawLine(pen, cx - k, cy - k, cx + k, cy + k); g.DrawLine(pen, cx - k, cy + k, cx + k, cy - k); }
+                        else if (i == 1) { g.DrawLine(pen, cx - k - .4f, cy, cx + k + .4f, cy); }
+                        else { g.DrawLine(pen, cx - k, cy, cx + k, cy); g.DrawLine(pen, cx, cy - k, cx, cy + k); }
+                    }
+                }
+            }
+            using (var l = new Pen(Color.FromArgb(48, 48, 54))) { g.DrawLine(l, 0, H - 1, Width, H - 1); }
+        }
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            bool h = InGroup(e.Location);
+            if (h != hover) { hover = h; Invalidate(); }
+            Cursor = Hit(e.Location) >= 0 ? Cursors.Hand : Cursors.Default;
+            base.OnMouseMove(e);
+        }
+        protected override void OnMouseLeave(EventArgs e) { if (hover) { hover = false; Invalidate(); } base.OnMouseLeave(e); }
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left) { return; }
+            int i = Hit(e.Location);
+            if (i == 0) { form.Close(); return; }
+            if (i == 1) { form.WindowState = FormWindowState.Minimized; return; }
+            if (i == 2) { return; }
+            // arrastrar la ventana
+            try { ReleaseCapture(); SendMessage(form.Handle, 0xA1, (IntPtr)2, IntPtr.Zero); } catch { }
         }
     }
 }

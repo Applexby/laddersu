@@ -1,5 +1,9 @@
 # Cambios
 
+## [0.6.4] - 2026-11-09
+- App Laddersu con barra de título propia: botones rojo (cerrar), amarillo (minimizar) y verde a la izquierda, como en macOS. Se arrastra desde la barra.
+- Web: el panel se muestra por partes, más limpio; la página se arma con reglas, guías y agentes que se mueven al azar.
+
 ## [0.6.3] - 2026-11-09
 - Biblioteca: las miniaturas muestran la composición entera (antes se veía solo la parte de arriba) y los botones de cada tarjeta ya no se cortan.
 - Web: nueva sección **Así se ve el panel** con capturas reales, pasos de Premiere a After Effects, la app de actualización y menú para el celular. La página se arma sola al entrar.

@@ -224,7 +224,8 @@ kbd { font: 600 13px var(--body); padding: 1px 7px; border-radius: 6px; backgrou
 }
 
 /* el panel por dentro */
-.tourGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 56px; align-items: center; }
+.tourGrid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 480px); gap: 64px; align-items: center; }
+.tour .win { background: #1c1c1e; }
 .tourList { display: grid; gap: 6px; }
 .tourList button { position: relative; display: grid; gap: 4px; text-align: left; padding: 16px 18px 18px; border: 0; border-radius: 16px; background: transparent; color: var(--soft); cursor: pointer; font: inherit; overflow: hidden; transition: background .2s; }
 .tourList button b { font: 750 18px var(--display); font-stretch: 110%; color: var(--soft); transition: color .2s; }
@@ -236,19 +237,15 @@ kbd { font: 600 13px var(--body); padding: 1px 7px; border-radius: 6px; backgrou
 .tourList .bar { position: absolute; left: 18px; right: 18px; bottom: 8px; height: 2px; border-radius: 2px; background: var(--rule); display: none; }
 .tourList .bar::after { content: ""; position: absolute; inset: 0; border-radius: 2px; background: var(--violet-2); transform: scaleX(var(--p, 0)); transform-origin: left; }
 .tourList button[aria-selected="true"] .bar { display: block; }
-.win { margin: 0; width: 100%; max-width: 420px; border-radius: 16px; background: #1c1c1e; box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 40px 90px -30px rgba(0,0,0,.8), 0 30px 120px -50px rgba(124,92,255,.5); overflow: hidden; justify-self: center; }
+.win { margin: 0; width: 100%; max-width: 480px; border-radius: 16px; background: #1c1c1e; box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 40px 90px -30px rgba(0,0,0,.8), 0 30px 120px -50px rgba(124,92,255,.5); overflow: hidden; justify-self: center; }
 .winBar { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; background: #2a2a2d; border-bottom: 1px solid rgba(0,0,0,.5); }
-.winBar i { width: 10px; height: 10px; border-radius: 50%; background: #48484d; }
-.winBar span { margin-left: 8px; font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.winBody { position: relative; aspect-ratio: 440 / 760; background: #1d1d20; }
+.winBar i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
+.winBar i:nth-child(2), .lights i:nth-child(2) { background: #febc2e; } .winBar i:nth-child(3), .lights i:nth-child(3) { background: #28c840; }
+.winBar span { position: absolute; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: 600; color: var(--faint); pointer-events: none; }
+.winBar { position: relative; }
+.winBody { position: relative; aspect-ratio: 880 / 830; background: #1d1d20; -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent); }
 .winBody img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; transition: opacity .25s; }
 .winBody img.swap { opacity: 0; }
-.pins { position: absolute; inset: 0; pointer-events: none; }
-.pin { position: absolute; display: flex; align-items: center; gap: 8px; transform: translateY(-50%); opacity: 0; animation: pinIn .4s var(--ease) forwards; }
-.pin i { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--amber); color: #141414; font: 800 12px/22px var(--body); text-align: center; font-style: normal; box-shadow: 0 0 0 4px rgba(245,165,36,.25); }
-.pin span { font: 700 12.5px var(--body); color: #141414; background: #fff; border-radius: 8px; padding: 4px 9px; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,.35); }
-.pin.r { flex-direction: row-reverse; }
-@keyframes pinIn { from { opacity: 0; transform: translateY(-50%) scale(.9); } to { opacity: 1; transform: translateY(-50%); } }
 @media (max-width: 900px) {
   .tourGrid { grid-template-columns: 1fr; gap: 24px; }
   .tourList { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; scrollbar-width: none; margin-inline: -20px; padding-inline: 20px; }
@@ -288,8 +285,9 @@ kbd { font: 600 13px var(--body); padding: 1px 7px; border-radius: 6px; backgrou
 .instGrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .instGrid .steps { grid-template-columns: 1fr 1fr; }
 .appWin { margin: 0; border-radius: 16px; background: #131315; box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 30px 70px -30px rgba(0,0,0,.8); overflow: hidden; }
-.appBar { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 14px; background: #1e1e21; font: 700 13px var(--body); }
-.appBar .mark { transform: scale(.75); }
+.appBar { position: relative; display: flex; align-items: center; height: 38px; padding: 0 14px; background: #1b1b1e; border-bottom: 1px solid rgba(255,255,255,.07); font: 600 12.5px var(--body); color: var(--faint); }
+.appBar > span:last-child { position: absolute; left: 0; right: 0; text-align: center; pointer-events: none; }
+.lights { display: flex; gap: 8px; } .lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
 .appBody { padding: 18px; display: grid; gap: 12px; }
 .appBody .sub { margin: 0; color: var(--faint); font-size: 13px; }
 .appCard { display: grid; gap: 4px; padding: 14px; border-radius: 10px; background: #1e1e22; box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); }
@@ -313,14 +311,14 @@ kbd { font: 600 13px var(--body); padding: 1px 7px; border-radius: 6px; backgrou
 .built { animation: bIn .45s var(--ease) both; }
 @keyframes bIn { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: none; } }
 .bLayer { position: absolute; left: 0; top: 0; width: 100%; pointer-events: none; z-index: 80; }
-.bBox { position: absolute; border: 1.5px solid #4d7cff; background: rgba(77,124,255,.06); border-radius: 3px; width: 0; height: 0; transition: width .32s var(--ease), height .32s var(--ease), opacity .3s; }
+.bBox { position: absolute; border: 1.5px solid #4d7cff; background: rgba(77,124,255,.06); border-radius: 3px; width: 0; height: 0; transition: left .34s var(--ease), top .34s var(--ease), width .34s var(--ease), height .34s var(--ease), opacity .3s; }
 .bBox.red { border-color: #ff4d4d; background: rgba(255,77,77,.06); }
 .bBox::before, .bBox::after { content: ""; position: absolute; width: 6px; height: 6px; background: #fff; border: 1.5px solid currentColor; color: #4d7cff; }
 .bBox::before { left: -4px; top: -4px; } .bBox::after { right: -4px; bottom: -4px; }
 .bBox b { position: absolute; left: -1.5px; top: -19px; font: 700 10px/17px ui-monospace, Consolas, monospace; color: #fff; background: #4d7cff; padding: 0 6px; border-radius: 3px 3px 0 0; white-space: nowrap; }
 .bBox.red b { background: #ff4d4d; }
 .bBox.out { opacity: 0; }
-.agent { position: absolute; left: 0; top: 0; width: 18px; height: 18px; transition: transform .5s var(--ease); z-index: 81; }
+.agent { position: absolute; left: 0; top: 0; width: 18px; height: 18px; z-index: 81; transition: opacity .3s; will-change: transform; }
 .agent svg { width: 18px; height: 18px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
 .agent span { position: absolute; left: 14px; top: 14px; font: 700 9.5px var(--body); color: #111; padding: 1px 6px; border-radius: 99px; white-space: nowrap; }
 .hud { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 90; display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 14px; border-radius: 99px; background: rgba(20,20,22,.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 12px 30px rgba(0,0,0,.5); font: 600 12.5px var(--body); color: var(--soft); white-space: nowrap; transition: opacity .3s, transform .3s var(--ease); }
@@ -335,3 +333,24 @@ kbd { font: 600 13px var(--body); padding: 1px 7px; border-radius: 6px; backgrou
 .linkBtn[hidden] { display: none; }
 .linkBtn:hover { color: var(--ink); }
 .doc ul + p, .doc ol + p { margin-top: 14px; }
+.bGuide { position: absolute; background: rgba(77,124,255,.55); opacity: 0; transition: opacity .25s, transform .45s var(--ease); }
+.bGuide.h { left: 0; right: 0; height: 1px; transform: scaleX(.2); }
+.bGuide.v { top: 0; bottom: 0; width: 1px; transform: scaleY(.05); transform-origin: top; }
+.bGuide.red { background: rgba(255,77,77,.75); }
+.bGuide.in { opacity: 1; transform: none; }
+.bClick { position: absolute; width: 22px; height: 22px; margin: -9px 0 0 -9px; border-radius: 50%; border: 2px solid; animation: bClk .5s ease-out forwards; }
+@keyframes bClk { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+.bRulers { position: fixed; inset: 0; pointer-events: none; z-index: 85; opacity: 0; transition: opacity .35s; }
+.bRulers.on { opacity: 1; }
+.bRulers .rx, .bRulers .ry { position: absolute; background-color: rgba(18,18,20,.92); }
+.bRulers .rx { left: 0; right: 0; top: 0; height: 16px; border-bottom: 1px solid rgba(255,255,255,.12);
+  background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.28) 0 1px, transparent 1px 10px), repeating-linear-gradient(90deg, rgba(255,255,255,.45) 0 1px, transparent 1px 100px);
+  background-size: 100% 5px, 100% 10px; background-repeat: repeat-x; background-position: 0 100%, 0 100%; }
+.bRulers .ry { top: 0; bottom: 0; left: 0; width: 16px; border-right: 1px solid rgba(255,255,255,.12);
+  background-image: repeating-linear-gradient(180deg, rgba(255,255,255,.28) 0 1px, transparent 1px 10px), repeating-linear-gradient(180deg, rgba(255,255,255,.45) 0 1px, transparent 1px 100px);
+  background-size: 5px 100%, 10px 100%; background-repeat: repeat-y; background-position: 100% 0, 100% 0; }
+.bRulers .corner { position: absolute; left: 0; top: 0; width: 17px; height: 17px; background: #121214; }
+.bRulers b { position: absolute; opacity: .55; transition: opacity .4s; }
+.bRulers .rx b { top: 0; height: 16px; } .bRulers .ry b { left: 0; width: 16px; }
+.bRulers b.out { opacity: 0; }
+@media (max-width: 700px) { .bRulers { display: none; } }
