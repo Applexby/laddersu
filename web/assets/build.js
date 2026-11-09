@@ -1,4 +1,4 @@
-/* Laddersu - la web "se arma sola": agentes (cursores) con reglas y guias recuadran cada pieza y la colocan.
+/* Laddersu - la web "se arma sola": agentes (cursores) con guias recuadran cada pieza y la colocan.
    Lo de la primera pantalla se arma al entrar; lo de abajo, al llegar con el scroll.
    "Ver todo" lo muestra todo; "Repetir" lo vuelve a armar. Sin JavaScript o con "reducir movimiento" no se hace. */
 (function () {
@@ -18,19 +18,6 @@
   document.body.appendChild(layer);
   function sizeLayer() { layer.style.height = document.documentElement.scrollHeight + 'px'; }
   sizeLayer();
-
-  // reglas (arriba e izquierda) con la medida de lo que se esta armando
-  var rulers = document.createElement('div'); rulers.className = 'bRulers'; rulers.setAttribute('aria-hidden', 'true');
-  rulers.innerHTML = '<div class="rx"></div><div class="ry"></div><i class="corner"></i>';
-  document.body.appendChild(rulers);
-  var rx = rulers.querySelector('.rx'), ry = rulers.querySelector('.ry');
-  function rulerMark(x, y, w, h, c) {
-    var mx = document.createElement('b'), my = document.createElement('b');
-    mx.style.left = (x - window.scrollX) + 'px'; mx.style.width = w + 'px'; mx.style.background = c;
-    my.style.top = (y - window.scrollY) + 'px'; my.style.height = h + 'px'; my.style.background = c;
-    rx.appendChild(mx); ry.appendChild(my);
-    setTimeout(function () { mx.classList.add('out'); my.classList.add('out'); setTimeout(function () { mx.remove(); my.remove(); }, 400); }, 700);
-  }
 
   // HUD
   var hud = document.createElement('div'); hud.className = 'hud'; hud.setAttribute('role', 'status');
@@ -117,10 +104,10 @@
     hbar.style.width = (100 * done / total).toFixed(1) + '%';
     if (done >= total) { complete(); return; }
     if (busy || queue.length) {
-      clearTimeout(hideT); idleShown = false; hud.classList.remove('gone'); rulers.classList.add('on'); hbtn.textContent = 'Ver todo';
+      clearTimeout(hideT); idleShown = false; hud.classList.remove('gone'); hbtn.textContent = 'Ver todo';
       htxt.innerHTML = (mobile ? 'Armando · ' : 'Armando la página · <b>' + Math.max(busy, 1) + '</b> agentes · ') + done + '/' + total + ' capas';
     } else if (!idleShown) {
-      idleShown = true; rulers.classList.remove('on');
+      idleShown = true;
       htxt.innerHTML = 'Pantalla armada en ' + secs() + ' s' + (mobile ? '' : ' · baja para ver el resto');
       hideT = setTimeout(function () { hud.classList.add('gone'); }, 3500);
     }
@@ -129,7 +116,7 @@
     if (finished) { return; }
     finished = true; running = false;
     agents.forEach(function (a) { a.el.style.opacity = '0'; a.busy = false; });
-    root.classList.remove('bld'); rulers.classList.remove('on');
+    root.classList.remove('bld');
     clearTimeout(hideT); hud.classList.remove('gone');
     htxt.innerHTML = 'Armada por <b>' + NA + ' agentes</b> en ' + secs() + ' s';
     hbar.style.width = '100%';
@@ -180,7 +167,6 @@
       box.innerHTML = '<b></b>'; box.querySelector('b').textContent = label(el, w, h);
       layer.appendChild(box);
       var gl = guides(x, y, w, h, red);
-      rulerMark(x, y, w, h, red ? '#ff4d4d' : '#4d7cff');
       requestAnimationFrame(function () { box.style.left = x + 'px'; box.style.top = y + 'px'; box.style.width = w + 'px'; box.style.height = h + 'px'; });
       moveTo(a, x + (1 - cx) * w - 4, y + (1 - cy) * h - 4, rnd(300, 460), function () {
         var ring = document.createElement('i'); ring.className = 'bClick'; ring.style.left = a.x + 'px'; ring.style.top = a.y + 'px'; ring.style.borderColor = a.c;
@@ -199,6 +185,7 @@
     queue.sort(function (p, q) { var a = p.getBoundingClientRect(), b = q.getBoundingClientRect(); return (a.top - b.top) || (a.left - b.left); });
     // los agentes arrancan desfasados, no todos a la vez
     agents.forEach(function (a) { if (!a.busy) { a.busy = true; setTimeout(function () { a.busy = false; work(a); }, rnd(0, 420)); } });
+    hudUpdate();
   }
 
   // primera pantalla al entrar; lo demas al llegar con el scroll
@@ -208,7 +195,7 @@
   }, { rootMargin: '0px 0px -8% 0px' }) : null;
   if (!io) { all.forEach(reveal); complete(); return; }
   all.forEach(function (el) { io.observe(el); });
-  hudUpdate();
+  htxt.textContent = 'Armando la p\u00e1gina\u2026';
 
   function skip() {
     running = false; queue = [];

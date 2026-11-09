@@ -340,17 +340,3 @@ kbd { font: 600 13px var(--body); padding: 1px 7px; border-radius: 6px; backgrou
 .bGuide.in { opacity: 1; transform: none; }
 .bClick { position: absolute; width: 22px; height: 22px; margin: -9px 0 0 -9px; border-radius: 50%; border: 2px solid; animation: bClk .5s ease-out forwards; }
 @keyframes bClk { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
-.bRulers { position: fixed; inset: 0; pointer-events: none; z-index: 85; opacity: 0; transition: opacity .35s; }
-.bRulers.on { opacity: 1; }
-.bRulers .rx, .bRulers .ry { position: absolute; background-color: rgba(18,18,20,.92); }
-.bRulers .rx { left: 0; right: 0; top: 0; height: 16px; border-bottom: 1px solid rgba(255,255,255,.12);
-  background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.28) 0 1px, transparent 1px 10px), repeating-linear-gradient(90deg, rgba(255,255,255,.45) 0 1px, transparent 1px 100px);
-  background-size: 100% 5px, 100% 10px; background-repeat: repeat-x; background-position: 0 100%, 0 100%; }
-.bRulers .ry { top: 0; bottom: 0; left: 0; width: 16px; border-right: 1px solid rgba(255,255,255,.12);
-  background-image: repeating-linear-gradient(180deg, rgba(255,255,255,.28) 0 1px, transparent 1px 10px), repeating-linear-gradient(180deg, rgba(255,255,255,.45) 0 1px, transparent 1px 100px);
-  background-size: 5px 100%, 10px 100%; background-repeat: repeat-y; background-position: 100% 0, 100% 0; }
-.bRulers .corner { position: absolute; left: 0; top: 0; width: 17px; height: 17px; background: #121214; }
-.bRulers b { position: absolute; opacity: .55; transition: opacity .4s; }
-.bRulers .rx b { top: 0; height: 16px; } .bRulers .ry b { left: 0; width: 16px; }
-.bRulers b.out { opacity: 0; }
-@media (max-width: 700px) { .bRulers { display: none; } }
