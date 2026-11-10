@@ -34,7 +34,7 @@ var Model = (function () {
   };
 
   // ---------- construccion ----------
-  M.HOST_VER = '0.7.1';
+  M.HOST_VER = '0.7.2';
   M.newId = function () { uid++; return uid; };
   // tras restaurar un estado guardado: evita ids repetidos
   M.reseed = function (st) {

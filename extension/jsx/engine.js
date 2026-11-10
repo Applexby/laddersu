@@ -6,7 +6,7 @@
  */
 var ES = (function () {
   var ES = {};
-  ES.VERSION = '0.7.1';
+  ES.VERSION = '0.7.2';
 
   // ---------- Utilidades ----------
   function trim(s) { return String(s).replace(/^\s+|\s+$/g, ''); }
@@ -696,6 +696,24 @@ var ES = (function () {
       dir: p.dir, dist: p.dist, blur: p.blur, fade: p.fade, scale: p.scale,
       dur: p.dur != null ? p.dur : def.dur
     };
+  };
+
+  // Animacion automatica que cabe en el tiempo que la palabra esta en pantalla.
+  // Las palabras que entran al final de una frase (o capas muy cortas) quedaban a media animacion:
+  // la entrada se acorta para terminar como mucho en la mitad del tiempo visible, y si la capa
+  // dura menos de ANIM_MIN_VIS la palabra aparece sin animacion. Solo para la animacion automatica:
+  // si la palabra tiene una animacion elegida a mano se respeta tal cual.
+  ES.ANIM_MIN_VIS = 0.3;
+  ES.ANIM_MIN_DUR = 0.1;
+  ES.fitAnim = function (a, visible) {
+    if (!a || !(a.dur > 0) || !(visible > 0)) return a;
+    var moves = a.fade || a.blur > 0 || (a.dir && a.dir !== 'none' && a.dist > 0) || a.scale;
+    if (!moves) return a;
+    if (visible < ES.ANIM_MIN_VIS) return { dir: 'none', dist: 0, blur: 0, fade: false, dur: 0, scale: null, skipped: true };
+    var max = Math.max(ES.ANIM_MIN_DUR, visible * 0.5);
+    if (a.dur <= max) return a;
+    var k = max / a.dur;
+    return { dir: a.dir, dist: Math.round(a.dist * Math.max(0.5, k) * 10) / 10, blur: a.blur, fade: a.fade, dur: Math.round(max * 1000) / 1000, scale: a.scale, fitted: true };
   };
 
   // ---------- 10. Sonido automatico ----------

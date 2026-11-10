@@ -6,7 +6,7 @@
  * Carga del motor: se intenta aqui por rutas conocidas, pero la via fiable es que el panel
  * inyecte engine.js con evalScript si ES_status() dice que falta (ver js/main.js).
  */
-var ES_VERSION = '0.7.1';
+var ES_VERSION = '0.7.2';
 
 function ES_loadEngine() {
   if (typeof ES !== 'undefined' && ES.VERSION === ES_VERSION) { return true; }
@@ -290,6 +290,14 @@ function ES_addSfx(comp, sfxId, t, label, ctx) {
   return L;
 }
 
+// animacion automatica ajustada al tiempo visible (ver ES.fitAnim); cuenta cuantas se acortaron o quitaron
+function ES_fit(ctx, a, visible) {
+  var f = ES.fitAnim(a, visible);
+  if (f && f.skipped) { ctx.animSkipped = (ctx.animSkipped || 0) + 1; }
+  else if (f && f.fitted) { ctx.animFitted = (ctx.animFitted || 0) + 1; }
+  return f;
+}
+
 // ---------- palabra: texto + color + fuente + transicion + formato + brillo + sonido ----------
 // c = clase normalizada; box = {x,y,size}; txt = texto a mostrar (ya con mayusculas)
 // La capa se llama como la palabra para identificarla en la linea de tiempo.
@@ -303,6 +311,7 @@ function ES_makeWord(ctx, seq, i, c, box, tin, tout, txt) {
 
   var anim = ES.resolveAnim(cfg.anim, c.trans);
   if (cfg.animOnlyBig && c.size !== 'L' && !c.trans) { anim = ES.resolveAnim(cfg.anim, 'none'); }
+  if (!c.trans) { anim = ES_fit(ctx, anim, tout - tin); }
   ES_animateIn(L, pl.pos, anim, tin);
   if (c.glow) { ES_addGlow(L, c.glowColor || cfg.glow.colorHex, cfg.glow.size, cfg.glow.opacity); }
   made.push(L);
@@ -775,7 +784,7 @@ function ES_styleLine(ctx, seq, A) {
     var tin = seq.words[i].start;
     L.inPoint = tin; L.outPoint = end;
     if (A.shadow) { ES_addShadow(L, A.shadowLook); }
-    var a = c.trans ? ES.resolveAnim(cfg.anim, c.trans) : anim;
+    var a = c.trans ? ES.resolveAnim(cfg.anim, c.trans) : ES_fit(ctx, anim, end - tin);
     ES_animateIn(L, pl.pos, a, tin);
     if (A.exit && end - tin > a.dur + 0.32) { ES_animateOut(L, anim, end); }
     if (c.glow) { ES_addGlow(L, c.glowColor || cfg.glow.colorHex, cfg.glow.size, cfg.glow.opacity); }

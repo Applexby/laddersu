@@ -312,5 +312,26 @@ console.log(n + ' pruebas de punta a punta OK');
     assert(hidden.length >= st.seqs[2].words.length, 'frase 3 oculta durante el intervalo (' + hidden.length + ')');
     hidden.forEach(function (l) { assert(l.inPoint >= st.seqs[2].start - 1e-6 || l.inPoint < t2start, 'no oculta la propia plantilla T2'); });
   });
+  t('animacion que cabe: la ultima palabra de una escalera no queda a medias', function () {
+    var s = setup(), st = fresh(), seq = st.seqs[0], n = seq.words.length;
+    var end = ES.seqEnd(seq, S0.tail, null);
+    seq.words[n - 1].start = end - 0.12; seq.words[n - 1].end = end;   // entra casi al final
+    if (n > 2) { seq.words[n - 2].start = end - 0.45; }                // poco tiempo visible
+    run(s.h, JSON.stringify(M.buildJob(st, S0, { only: [0] })));
+    var tl = textLayers(s.comp); assert.strictEqual(tl.length, n);
+    tl.forEach(function (l) {
+      var vis = l.outPoint - l.inPoint, op = l.property('ADBE Transform Group').property('ADBE Opacity');
+      var posK = l.property('ADBE Transform Group').property('ADBE Position');
+      if (vis < ES.ANIM_MIN_VIS) { assert.strictEqual(op.numKeys + posK.numKeys, 0, 'capa muy corta sin animacion: ' + l.td.text); return; }
+      var last = Math.max(op.numKeys ? op.keyTime(op.numKeys) : 0, posK.numKeys ? posK.keyTime(posK.numKeys) : 0);
+      if (last) { assert(last - l.inPoint <= Math.max(ES.ANIM_MIN_DUR, vis * 0.5) + 1e-6, 'termina a tiempo: ' + l.td.text + ' ' + (last - l.inPoint) + ' de ' + vis); }
+    });
+    // con animacion elegida a mano se respeta
+    var s2 = setup(), st2 = fresh(), q = st2.seqs[0];
+    q.words[n - 1].start = end - 0.12; q.words[n - 1].end = end; q.words[n - 1].c.trans = 'pop';
+    run(s2.h, JSON.stringify(M.buildJob(st2, S0, { only: [0] })));
+    var lastL = textLayers(s2.comp).filter(function (l) { return Math.abs(l.inPoint - (end - 0.12)) < 1e-6; })[0];
+    assert(lastL && lastL.property('ADBE Transform Group').property('ADBE Scale').numKeys >= 3, 'animacion manual intacta');
+  });
   console.log('pruebas v0.6 de punta a punta OK');
 })();

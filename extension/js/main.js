@@ -1240,8 +1240,9 @@
       if (t != null) {
         var a = ES.resolveAnim(def, c.trans);
         if (S.animBig && c.size !== 'L' && !c.trans) { a = ES.resolveAnim(def, 'none'); }
+        if (!c.trans) { a = ES.fitAnim(a, ES.seqEnd(seq, S.tail, null) - w.start); }
         var rel = t - (w.start - seq.start); if (rel < 0) { continue; }
-        var p = Math.min(1, rel / Math.max(0.01, a.dur)), e = easeOut(p);
+        var p = a.dur > 0 ? Math.min(1, rel / a.dur) : 1, e = easeOut(p);
         if (a.fade) { alpha = e; }
         var off = (a.dist || 0) * (1 - e);
         if (a.dir === 'up') { dy = off; } else if (a.dir === 'down') { dy = -off; } else if (a.dir === 'left') { dx = off; } else if (a.dir === 'right') { dx = -off; }
@@ -1283,9 +1284,9 @@
     for (i = 0; i < lay.boxes.length; i++) {
       var bx = lay.boxes[i], c = L.cls[i], w = seq.words[i], alpha = 1, blur = 0, dx = 0, dy = 0, sc = 1;
       if (t != null) {
-        var a = c.trans ? ES.resolveAnim(def, c.trans) : base;
+        var a = c.trans ? ES.resolveAnim(def, c.trans) : ES.fitAnim(base, end - (w.start - seq.start));
         var rel = t - (w.start - seq.start); if (rel < 0) { continue; }
-        var p = Math.min(1, rel / Math.max(0.01, a.dur)), e = easeOut(p);
+        var p = a.dur > 0 ? Math.min(1, rel / a.dur) : 1, e = easeOut(p);
         if (a.fade) { alpha = e; }
         var off = (a.dist || 0) * (1 - e);
         if (a.dir === 'up') { dy = off; } else if (a.dir === 'down') { dy = -off; } else if (a.dir === 'left') { dx = off; } else if (a.dir === 'right') { dx = -off; }

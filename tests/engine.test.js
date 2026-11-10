@@ -367,5 +367,13 @@ console.log('\n' + pass + ' pruebas de motor OK');
     assert.strictEqual(ES.groupShort(it, {}).length, 2, 'silencio largo');
     assert.strictEqual(ES.groupShort(it, {})[0][0], it[0], 'devuelve los mismos objetos');
   });
+  t('fitAnim: acorta o quita la animacion automatica si la capa dura poco', function () {
+    var a = { dir: 'up', dist: 60, blur: 20, fade: true, dur: 0.45, scale: null };
+    assert.strictEqual(ES.fitAnim(a, 2), a, 'con tiempo de sobra no cambia');
+    var f = ES.fitAnim(a, 0.5); assert.strictEqual(f.dur, 0.25); assert(f.dist < 60 && f.dist >= 30); assert.strictEqual(f.blur, 20);
+    var z = ES.fitAnim(a, 0.2); assert.strictEqual(z.dur, 0); assert(!z.fade && !z.blur && z.dir === 'none' && z.skipped);
+    var none = { dir: 'none', dist: 0, blur: 0, fade: false, dur: 0.3, scale: null };
+    assert.strictEqual(ES.fitAnim(none, 0.1), none, 'sin animacion no se toca');
+  });
 })();
 console.log(pass + ' pruebas de motor OK');
