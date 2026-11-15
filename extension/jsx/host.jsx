@@ -6,7 +6,7 @@
  * Carga del motor: se intenta aqui por rutas conocidas, pero la via fiable es que el panel
  * inyecte engine.js con evalScript si ES_status() dice que falta (ver js/main.js).
  */
-var ES_VERSION = '0.7.2';
+var ES_VERSION = '0.7.3';
 
 function ES_loadEngine() {
   if (typeof ES !== 'undefined' && ES.VERSION === ES_VERSION) { return true; }
@@ -667,6 +667,8 @@ function ES_styleKaraoke(ctx, seq) {
   var fill = grp.property('ADBE Vectors Group').addProperty('ADBE Vector Graphic - Fill');
   var bc = ES_hex(K.boxColorHex, [1, 0.83, 0]);
   fill.property('ADBE Vector Fill Color').setValue([bc[0], bc[1], bc[2], 1]);
+  // al agregar el relleno, AE invalida la referencia al rectangulo: se vuelve a buscar
+  rect = R.property('ADBE Root Vectors Group').property(1).property('ADBE Vectors Group').property('ADBE Vector Shape - Rect');
   var tg = R.property('ADBE Transform Group'), pos = tg.property('ADBE Position'), size = rect.property('ADBE Vector Rect Size');
   for (i = 0; i < keys.length; i++) {
     pos.setValueAtTime(keys[i].t, [keys[i].cx, keys[i].cy]);

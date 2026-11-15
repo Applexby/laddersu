@@ -13,8 +13,19 @@ function create() {
 
   function clone(v) { return v instanceof Array ? v.slice() : v; }
   function Prop(m, vt, val) { this.matchName = m; this.name = m; this.propertyType = PT.PROPERTY; this.propertyValueType = vt; this.value = val; this.keys = []; this.isModified = false; this.expression = ''; this.expressionEnabled = false; }
-  Prop.prototype.setValue = function (v) { this.value = clone(v); this.isModified = true; };
-  Prop.prototype.setValueAtTime = function (t, v) { this.keys.push({ t: t, v: clone(v), it: 6613, ot: 6613, ei: new A.KeyframeEase(0, 33), eo: new A.KeyframeEase(0, 33) }); this.keys.sort(function (a, b) { return a.t - b.t; }); this.isModified = true; };
+  // Como en AE: al agregar una propiedad a un grupo, las referencias que ya tenias a sus hijos dejan de ser validas
+  function alive(o) { if (o.invalid) { throw new ReferenceError('El objeto no es v\u00e1lido (' + o.matchName + ')'); } }
+  // la referencia vieja queda invalida; buscar la propiedad otra vez devuelve una nueva (con los mismos valores)
+  function renew(o, parent) {
+    var n = Object.create(Object.getPrototypeOf(o)), k;
+    for (k in o) { if (Object.prototype.hasOwnProperty.call(o, k)) { n[k] = o[k]; } }
+    n.parent = parent;
+    if (o.kids) { n.kids = o.kids.map(function (c) { return renew(c, n); }); }
+    o.invalid = true;
+    return n;
+  }
+  Prop.prototype.setValue = function (v) { alive(this); this.value = clone(v); this.isModified = true; };
+  Prop.prototype.setValueAtTime = function (t, v) { alive(this); this.keys.push({ t: t, v: clone(v), it: 6613, ot: 6613, ei: new A.KeyframeEase(0, 33), eo: new A.KeyframeEase(0, 33) }); this.keys.sort(function (a, b) { return a.t - b.t; }); this.isModified = true; };
   Object.defineProperty(Prop.prototype, 'numKeys', { get: function () { return this.keys.length; } });
   Prop.prototype.keyTime = function (k) { return this.keys[k - 1].t; };
   Prop.prototype.keyValue = function (k) { return this.keys[k - 1].v; };
@@ -28,14 +39,16 @@ function create() {
   function Group(m, indexed, adds) { this.matchName = m; this.name = m; this.propertyType = indexed ? PT.INDEXED_GROUP : PT.NAMED_GROUP; this.kids = []; this.adds = adds || []; this.enabled = true; }
   Object.defineProperty(Group.prototype, 'numProperties', { get: function () { return this.kids.length; } });
   Group.prototype.property = function (x) {
-    var i;
+    var i; alive(this);
     if (typeof x === 'number') { return this.kids[x - 1] || null; }
     for (i = 0; i < this.kids.length; i++) { if (this.kids[i].matchName === x) { return this.kids[i]; } }
     return null;
   };
   Group.prototype.canAddProperty = function (m) { return this.adds.indexOf(m) >= 0; };
   Group.prototype.addProperty = function (m) {
+    alive(this);
     if (!this.canAddProperty(m)) { throw new Error('no se puede agregar ' + m + ' a ' + this.matchName); }
+    var self = this; this.kids = this.kids.map(function (k) { return renew(k, self); });
     var g = tmpl(m); g.parent = this;
     this.kids.unshift(g);                       // AE inserta arriba
     return g;

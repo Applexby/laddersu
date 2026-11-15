@@ -1,5 +1,9 @@
 # Cambios
 
+## [0.7.3] - 2026-11-14
+- Corregido: las frases con **Caja que recorre** no se creaban y Generar mostraba "El objeto no es válido (línea 670)". After Effects invalidaba la referencia a la caja al agregarle el relleno; ahora se vuelve a buscar.
+- Las pruebas automáticas ahora simulan ese comportamiento de After Effects para detectar este tipo de error antes de publicar.
+
 ## [0.7.2] - 2026-11-10
 - **La animación cabe en la capa**: las palabras que entran al final de una frase (sobre todo en escalera) quedaban a media animación porque la capa terminaba antes. Ahora la animación automática termina como máximo a la mitad del tiempo que la palabra está en pantalla, y si la capa dura menos de 0,3 s la palabra aparece sin animación para que se lea. Las demás capas mantienen su animación normal.
 - Si eliges a mano una animación para una palabra, se respeta tal cual.
